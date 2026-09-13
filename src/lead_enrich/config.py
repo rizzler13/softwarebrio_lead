@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # Concurrency & timeouts
     max_concurrent_domains: int = 10
     page_timeout_ms: int = 10_000  # 10s per page with asset blocking to prevent false timeouts
-    domain_timeout_s: int = 40  # 40s hard ceiling per domain (accommodates queuing during multi-domain batches)
+    domain_timeout_s: int = 40  # 40s hard ceiling per domain (allows multi-domain batch queuing)
     request_delay_s: tuple[float, float] = (0.1, 0.3)  # polite delay between page requests
 
     # Content processing: 950 tokens captures homepage pitch, audience, and leadership
