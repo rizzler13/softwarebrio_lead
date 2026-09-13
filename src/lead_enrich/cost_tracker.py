@@ -8,6 +8,7 @@ of the bonus criterion.
 
 from __future__ import annotations
 
+from rich import box
 from rich.console import Console
 from rich.table import Table
 
@@ -16,17 +17,23 @@ from lead_enrich.models import DomainResult
 
 def print_cost_report(results: list[DomainResult]) -> None:
     """Print a summary table of per-stage latency and token usage."""
-    console = Console()
-    table = Table(title="Pipeline Performance & Token Usage Report", show_lines=True)
+    console = Console(highlight=False)
+    table = Table(
+        box=box.HORIZONTALS,
+        show_header=True,
+        header_style="bold",
+        padding=(0, 1),
+        collapse_padding=True,
+    )
 
-    table.add_column("Domain", style="cyan", no_wrap=True)
-    table.add_column("Status", style="bold", no_wrap=True)
-    table.add_column("Fetch", justify="right", style="magenta")
-    table.add_column("LLM", justify="right", style="blue")
-    table.add_column("Enrich", justify="right", style="yellow")
-    table.add_column("Total Time", justify="right", style="bold green", no_wrap=True)
-    table.add_column("Tokens (P / C / Tot)", justify="right", no_wrap=True)
-    table.add_column("Est. Cost", justify="right", style="green", no_wrap=True)
+    table.add_column("domain", no_wrap=True)
+    table.add_column("status", no_wrap=True)
+    table.add_column("fetch", justify="right", no_wrap=True)
+    table.add_column("llm", justify="right", no_wrap=True)
+    table.add_column("enrich", justify="right", no_wrap=True)
+    table.add_column("total", justify="right", no_wrap=True)
+    table.add_column("tokens (p/c/t)", justify="right", no_wrap=True)
+    table.add_column("cost", justify="right", no_wrap=True)
 
     total_prompt = 0
     total_completion = 0
@@ -35,21 +42,21 @@ def print_cost_report(results: list[DomainResult]) -> None:
     for result in results:
         usage = result.token_usage
         timings = result.timings
-        status_color = {
-            "success": "green",
-            "partial": "yellow",
-            "failed": "red",
-        }.get(result.status.value, "white")
+        status_str = {
+            "success": "ok",
+            "partial": "part",
+            "failed": "fail",
+        }.get(result.status.value, result.status.value)
 
         token_str = (
-            f"{usage.prompt_tokens} / {usage.completion_tokens} / {usage.total_tokens}"
+            f"{usage.prompt_tokens}/{usage.completion_tokens}/{usage.total_tokens}"
             if usage.total_tokens > 0
             else "—"
         )
 
         table.add_row(
             result.domain,
-            f"[{status_color}]{result.status.value}[/{status_color}]",
+            status_str,
             f"{timings.fetch_s:.2f}s" if timings.fetch_s > 0 else "—",
             f"{timings.llm_s:.2f}s" if timings.llm_s > 0 else "—",
             f"{timings.enrich_s:.2f}s" if timings.enrich_s > 0 else "—",
@@ -62,22 +69,24 @@ def print_cost_report(results: list[DomainResult]) -> None:
         total_completion += usage.completion_tokens
         total_cost += usage.estimated_cost_usd
 
-    total_tokens_str = f"{total_prompt} / {total_completion} / {total_prompt + total_completion}"
+    total_tokens_str = f"{total_prompt}/{total_completion}/{total_prompt + total_completion}"
 
+    table.add_section()
     table.add_row(
-        "[bold]TOTAL[/bold]",
+        "total",
         "",
         "",
         "",
         "",
         "",
-        f"[bold]{total_tokens_str}[/bold]",
-        f"[bold]${total_cost:.4f}[/bold]",
+        total_tokens_str,
+        f"${total_cost:.4f}",
+        style="bold",
     )
 
     console.print()
     console.print(table)
     console.print(
-        "[dim]Tokens logged as Prompt / Completion / Total. "
-        "Cost estimated at $0.59/$0.79 per 1M input/output tokens.[/dim]\n"
+        "[dim]tokens: prompt/completion/total · pricing: $0.59/$0.79 per 1M[/dim]\n"
     )
+

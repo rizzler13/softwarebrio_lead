@@ -69,14 +69,14 @@ structlog.configure(
     processors=[
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.dev.ConsoleRenderer(),
+        structlog.processors.TimeStamper(fmt="%H:%M:%S"),
+        structlog.dev.ConsoleRenderer(colors=False),
     ],
     logger_factory=structlog.PrintLoggerFactory(file=SafeStream(sys.stdout)),
 )
 
 log = structlog.get_logger()
-console = Console()
+console = Console(highlight=False)
 
 
 async def process_domain(domain: str, settings: Settings, browser=None) -> DomainResult:
@@ -260,13 +260,15 @@ async def main() -> None:
     domains = [d.strip() for d in args.domains.split(",") if d.strip()]
 
     if not domains:
-        console.print("[red]No domains provided.[/red]")
+        console.print("[dim]error: no domains provided[/dim]")
         return
 
-    console.print("\n[bold]Lead Enrichment Agent[/bold]")
-    console.print(f"Processing {len(domains)} domain(s): {', '.join(domains)}\n")
-
     settings = load_settings()
+    console.print(
+        f"\n[bold]lead-enrich[/bold] · {len(domains)} domain(s) "
+        f"[dim](concurrency={settings.max_concurrent_domains})[/dim]\n"
+    )
+
     start = time.monotonic()
 
     results = await run_pipeline(domains, settings)
@@ -284,20 +286,18 @@ async def main() -> None:
     )
 
     # Print summary
-    console.print(f"\n[bold green]Done in {elapsed}s[/bold green] (Run: [cyan]{run_id}[/cyan])")
-    console.print(f"  Run JSON:  {run_json}")
-    console.print(f"  Run CSV:   {run_csv}")
-    console.print(f"  Telemetry: {manifest_path}")
-    console.print(f"  Master:    {settings.output_dir / 'all_leads.csv'}")
-
     succeeded = sum(1 for r in results if r.status == ProcessingStatus.SUCCESS)
     partial = sum(1 for r in results if r.status == ProcessingStatus.PARTIAL)
     failed = sum(1 for r in results if r.status == ProcessingStatus.FAILED)
+
     console.print(
-        f"  Results: [green]{succeeded} success[/green], "
-        f"[yellow]{partial} partial[/yellow], "
-        f"[red]{failed} failed[/red]"
+        f"\n[bold]done in {elapsed}s[/bold] · {succeeded} ok, {partial} partial, {failed} failed "
+        f"[dim]({run_id})[/dim]"
     )
+    console.print(f"  json      {run_json}")
+    console.print(f"  csv       {run_csv}")
+    console.print(f"  manifest  {manifest_path}")
+    console.print(f"  master    {settings.output_dir / 'all_leads.csv'}")
 
     # Cost report
     print_cost_report(results)

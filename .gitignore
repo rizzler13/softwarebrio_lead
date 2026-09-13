@@ -34,3 +34,6 @@ htmlcov/
 
 # Local reference docs
 ENGINEERING_LOG.md
+
+# Run artifacts
+output/runs/

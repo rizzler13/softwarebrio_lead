@@ -374,8 +374,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Linear offers a purpose-built product development platform that integrates AI agents to help software teams plan, coordinate, and build products more efficiently.",
-      "target_audience": "Product managers, engineers, and software development teams looking for AI‑enhanced planning and collaboration tools.",
+      "company_overview": "Linear is a product development platform designed for teams and AI agents, offering tools to plan, build, and launch software efficiently in the AI era.",
+      "target_audience": "Product teams, software developers, and organizations building digital products who need coordinated planning and AI‑enhanced workflows.",
       "contact_emails": [
         "hello@linear.app"
       ],
@@ -390,18 +390,18 @@
     },
     "token_usage": {
       "prompt_tokens": 660,
-      "completion_tokens": 299,
-      "total_tokens": 959,
-      "estimated_cost_usd": 0.000626
+      "completion_tokens": 161,
+      "total_tokens": 821,
+      "estimated_cost_usd": 0.000517
     },
     "timings": {
-      "fetch_s": 2.27,
-      "preprocess_s": 0.022,
-      "llm_s": 2.21,
-      "enrich_s": 2.46,
-      "total_s": 6.96
+      "fetch_s": 4.35,
+      "preprocess_s": 0.044,
+      "llm_s": 3.52,
+      "enrich_s": 4.41,
+      "total_s": 12.32
     },
-    "processing_time_s": 6.96,
+    "processing_time_s": 12.32,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://linear.app",
