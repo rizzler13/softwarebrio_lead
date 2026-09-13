@@ -50,18 +50,34 @@ def clean_text(raw: str) -> str:
     for pattern in noise_patterns:
         text = re.sub(pattern, "", text)
 
-    # Deduplicate lines that appear more than twice (nav items repeated in footer, etc.)
+    # Deduplicate lines and drop isolated button/menu labels
     lines = text.split("\n")
     seen_count: dict[str, int] = {}
     deduped = []
     for line in lines:
         stripped = line.strip()
         if not stripped:
-            deduped.append("")
+            continue
+        # Drop standalone button labels / very short nav words that add no value
+        if len(stripped.split()) <= 2 and stripped.lower() in {
+            "sign in",
+            "sign up",
+            "log in",
+            "get started",
+            "learn more",
+            "contact sales",
+            "read more",
+            "see all",
+            "view all",
+            "try free",
+            "start free",
+            "book a demo",
+            "talk to sales",
+        }:
             continue
         seen_count[stripped] = seen_count.get(stripped, 0) + 1
         if seen_count[stripped] <= 2:
-            deduped.append(line)
+            deduped.append(stripped)
 
     return "\n".join(deduped).strip()
 
@@ -84,12 +100,11 @@ def _page_priority(page: PageContent) -> int:
 
 def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
     """
-    Merge and trim page content to fit within the token budget.
+    Merge and trim page content to fit strictly within the token budget.
 
     Strategy: prioritize about/team pages, truncate lower-value pages first.
-    Each page gets a clear header so the LLM knows what it's reading.
+    Uses exact token truncation to guarantee the LLM input never exceeds the budget.
     """
-    # Sort by priority — high-value pages first
     sorted_pages = sorted(pages, key=_page_priority, reverse=True)
 
     sections: list[str] = []
@@ -103,31 +118,29 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
         if not cleaned:
             continue
 
-        # Build a section with a clear header
-        header = f"--- Page: {page.url} ---"
-        if page.emails:
-            header += f"\nEmails found: {', '.join(page.emails)}"
+        # Concise header with URL, meta description, and emails
+        header = f"[{page.url}]"
         if page.meta_description:
-            header += f"\nMeta: {page.meta_description}"
+            header += f"\nMeta: {page.meta_description.strip()}"
+        if page.emails:
+            header += f"\nEmails found: {', '.join(page.emails[:3])}"
 
         section = f"{header}\n{cleaned}"
-        section_tokens = count_tokens(section)
+        encoded_section = _encoder.encode(section)
+        section_tokens = len(encoded_section)
 
-        # Check if we have room
         remaining = token_budget - tokens_used
+        if remaining <= 0:
+            break
+
         if section_tokens <= remaining:
             sections.append(section)
             tokens_used += section_tokens
-        elif remaining > 200:
-            # Truncate to fit — better to have partial content than none
-            words = section.split()
-            # Rough estimate: 1 token ≈ 0.75 words
-            word_limit = int(remaining * 0.75)
-            truncated = " ".join(words[:word_limit]) + "\n[... truncated]"
+        else:
+            # Token-exact truncation: decode only what fits in the remaining budget
+            truncated = _encoder.decode(encoded_section[:remaining]) + "\n[...]"
             sections.append(truncated)
             tokens_used += remaining
-            break
-        else:
             break
 
     return "\n\n".join(sections)

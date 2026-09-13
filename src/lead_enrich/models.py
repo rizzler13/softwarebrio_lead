@@ -49,33 +49,25 @@ class CompanyIntel(BaseModel):
 
     company_overview: str = Field(
         "",
-        description="Concise 2-sentence summary of what the company does.",
+        description="Concise 1-2 sentence summary of product and notable traits.",
     )
     target_audience: str = Field(
         "",
-        description=(
-            "Who the product is built for, e.g. 'Developers building backend applications'."
-        ),
+        description="Primary target customers/audience.",
     )
     contact_emails: list[str] = Field(
         default_factory=list,
-        description="Public/generic emails found on the site (contact@, sales@, etc).",
+        description="Public generic contact emails.",
     )
     key_team_members: list[TeamMember] = Field(
         default_factory=list,
-        description=(
-            "Names, roles, and LinkedIn URLs of up to 5 key leadership/executives/founders only. "
-            "Do not list all employees."
-        ),
+        description="Top 2-3 key founders or C-level executives only.",
     )
     confidence_score: float = Field(
         0.0,
         ge=0.0,
         le=1.0,
-        description=(
-            "Self-assessed confidence in the completeness of this extraction, "
-            "from 0.0 (nothing useful found) to 1.0 (everything populated)."
-        ),
+        description="Confidence score between 0.0 and 1.0.",
     )
 
 

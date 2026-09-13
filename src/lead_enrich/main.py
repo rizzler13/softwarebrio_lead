@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
+import sys
 import time
 from datetime import datetime
 
@@ -28,6 +30,50 @@ from lead_enrich.models import DomainResult, ProcessingStatus
 from lead_enrich.preprocessor import prepare_llm_input
 from lead_enrich.scorer import compute_confidence
 from lead_enrich.writer import write_run_output
+
+# Ensure stdout and stderr use blocking I/O so logging writes never raise
+# BlockingIOError (Errno 35) when Playwright/subprocesses touch file descriptors on macOS.
+try:
+    os.set_blocking(sys.stdout.fileno(), True)
+    os.set_blocking(sys.stderr.fileno(), True)
+except Exception:
+    pass
+
+
+class SafeStream:
+    """Wrapper around stdout that handles non-blocking pipes and prevents BlockingIOError."""
+
+    def __init__(self, stream):
+        self._stream = stream
+
+    def write(self, s: str) -> int:
+        try:
+            return self._stream.write(s)
+        except BlockingIOError:
+            try:
+                os.set_blocking(self._stream.fileno(), True)
+                return self._stream.write(s)
+            except Exception:
+                return len(s)
+        except Exception:
+            return len(s)
+
+    def flush(self) -> None:
+        try:
+            self._stream.flush()
+        except Exception:
+            pass
+
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.dev.ConsoleRenderer(),
+    ],
+    logger_factory=structlog.PrintLoggerFactory(file=SafeStream(sys.stdout)),
+)
 
 log = structlog.get_logger()
 console = Console()
@@ -159,6 +205,11 @@ async def run_pipeline(domains: list[str], settings: Settings) -> list[DomainRes
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
+        try:
+            os.set_blocking(sys.stdout.fileno(), True)
+            os.set_blocking(sys.stderr.fileno(), True)
+        except Exception:
+            pass
         browser = await pw.chromium.launch(
             headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"],

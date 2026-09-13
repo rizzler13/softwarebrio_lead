@@ -123,11 +123,45 @@ _page_semaphore = asyncio.Semaphore(8)
 _page_cache: dict[str, PageContent] = {}
 
 
+async def _extract_clean_text(page) -> str:
+    """
+    Extract visible content text from the page, excluding nav, header,
+    footer, and boilerplate to maximize signal density and minimize token waste.
+    """
+    try:
+        text = await page.evaluate("""() => {
+            const clone = document.body.cloneNode(true);
+            const removeSelectors = [
+                'nav', 'header', 'footer', 'script', 'style', 'svg',
+                'noscript', 'dialog', '[role="navigation"]',
+                '[role="banner"]', '[role="contentinfo"]',
+                '.cookie-banner', '#cookie-banner'
+            ];
+            for (const sel of removeSelectors) {
+                clone.querySelectorAll(sel).forEach(el => el.remove());
+            }
+            return clone.innerText || '';
+        }""")
+        return text.strip() if text and text.strip() else await page.inner_text("body")
+    except Exception:
+        try:
+            return await page.inner_text("body")
+        except Exception:
+            return ""
+
+
 async def _create_optimized_context(browser):
     """Create a Playwright context that aborts images, fonts, and media for maximum speed."""
     context = await browser.new_context(
         user_agent=random.choice(USER_AGENTS),
         viewport={"width": 1280, "height": 720},
+        locale="en-US",
+        extra_http_headers={
+            "accept-language": "en-US,en;q=0.9",
+            "sec-ch-ua": '"Chromium";v="125", "Google Chrome";v="125"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"macOS"',
+        },
     )
     # Block heavy binary assets that aren't needed for text extraction
     await context.route(
@@ -152,6 +186,13 @@ async def discover_urls(domain: str, settings: Settings, browser=None) -> list[s
     pw_instance = None
     if browser is None:
         pw_instance = await async_playwright().start()
+        try:
+            import os
+            import sys
+            os.set_blocking(sys.stdout.fileno(), True)
+            os.set_blocking(sys.stderr.fileno(), True)
+        except Exception:
+            pass
         browser = await pw_instance.chromium.launch(
             headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"],
@@ -160,70 +201,75 @@ async def discover_urls(domain: str, settings: Settings, browser=None) -> list[s
 
     try:
         context = await _create_optimized_context(browser)
-        page = await context.new_page()
-
         try:
-            await page.goto(
-                base_url, wait_until="domcontentloaded", timeout=settings.page_timeout_ms
-            )
-            # Short wait for JS hydration
-            await page.wait_for_timeout(350)
+            async with _page_semaphore:
+                page = await context.new_page()
+                try:
+                    await page.goto(
+                        base_url, wait_until="domcontentloaded", timeout=settings.page_timeout_ms
+                    )
+                    await page.wait_for_timeout(350)
 
-            # Cache homepage text and metadata immediately — saves an entire browser round-trip
-            try:
-                hp_text = await page.inner_text("body")
-                hp_meta = await page.eval_on_selector_all(
-                    'meta[name="description"], meta[property="og:description"]',
-                    "els => els.map(e => e.content).filter(Boolean)",
-                )
-                hp_jsonld = await page.eval_on_selector_all(
-                    'script[type="application/ld+json"]',
-                    "els => els.map(e => e.textContent)",
-                )
-                hp_combined = hp_text + "\n" + "\n".join(hp_meta) + "\n" + "\n".join(hp_jsonld)
-                _page_cache[base_url] = PageContent(
-                    url=base_url,
-                    text=hp_text,
-                    emails=_extract_emails(hp_combined),
-                    meta_description=hp_meta[0] if hp_meta else "",
-                    status_code=200,
-                )
-            except Exception as exc:
-                log.debug("homepage_early_extract_error", domain=domain, error=str(exc))
+                    # Cache homepage text and metadata immediately — saves
+                    # an entire browser round-trip on subsequent fetches
+                    try:
+                        hp_text = await _extract_clean_text(page)
+                        hp_meta = await page.eval_on_selector_all(
+                            'meta[name="description"], meta[property="og:description"]',
+                            "els => els.map(e => e.content).filter(Boolean)",
+                        )
+                        hp_jsonld = await page.eval_on_selector_all(
+                            'script[type="application/ld+json"]',
+                            "els => els.map(e => e.textContent)",
+                        )
+                        hp_combined = (
+                            hp_text + "\n" + "\n".join(hp_meta) + "\n" + "\n".join(hp_jsonld)
+                        )
+                        _page_cache[base_url] = PageContent(
+                            url=base_url,
+                            text=hp_text,
+                            emails=_extract_emails(hp_combined),
+                            meta_description=hp_meta[0] if hp_meta else "",
+                            status_code=200,
+                        )
+                    except Exception as exc:
+                        log.debug("homepage_early_extract_error", domain=domain, error=str(exc))
 
-            # Grab all links from nav, header, footer, and main content
-            links = await page.eval_on_selector_all(
-                "a[href]",
-                "els => els.map(e => e.href)",
-            )
+                    # Grab all links from nav, header, footer, and main content
+                    links = await page.eval_on_selector_all(
+                        "a[href]",
+                        "els => els.map(e => e.href)",
+                    )
 
-            for href in links:
-                if not _is_same_domain(href, domain):
-                    continue
-                parsed = urlparse(href)
-                path = parsed.path.rstrip("/")
-                if not path or path == "/":
-                    continue
-                # Skip obvious non-content paths
-                if any(
-                    skip in path.lower()
-                    for skip in [
-                        "/blog",
-                        "/docs",
-                        "/api",
-                        "/login",
-                        "/signup",
-                        "/register",
-                        "/app",
-                        "/dashboard",
-                        "/legal",
-                    ]
-                ):
-                    continue
-                score = _score_url(path)
-                if score > 0:
-                    full_url = f"{base_url}{path}"
-                    discovered[full_url] = max(discovered.get(full_url, 0), score)
+                    for href in links:
+                        if not _is_same_domain(href, domain):
+                            continue
+                        parsed = urlparse(href)
+                        path = parsed.path.rstrip("/")
+                        if not path or path == "/":
+                            continue
+                        if any(
+                            skip in path.lower()
+                            for skip in [
+                                "/blog",
+                                "/docs",
+                                "/api",
+                                "/login",
+                                "/signup",
+                                "/register",
+                                "/app",
+                                "/dashboard",
+                                "/legal",
+                            ]
+                        ):
+                            continue
+                        score = _score_url(path)
+                        if score > 0:
+                            full_url = f"{base_url}{path}"
+                            discovered[full_url] = max(discovered.get(full_url, 0), score)
+
+                finally:
+                    await page.close()
 
         except PlaywrightTimeout:
             log.warning("homepage_timeout", domain=domain)
@@ -280,8 +326,8 @@ async def fetch_page(url: str, context, settings: Settings) -> PageContent:
             if status >= 400:
                 return PageContent(url=url, status_code=status, error=f"HTTP {status}")
 
-            # Extract visible text — inner_text cleanly extracts what a human reads
-            text = await page.inner_text("body")
+            # Extract visible text without navigation and footer clutter
+            text = await _extract_clean_text(page)
 
             # Try to grab meta description for extra context
             meta_desc = await page.eval_on_selector_all(

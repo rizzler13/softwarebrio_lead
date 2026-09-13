@@ -17,14 +17,13 @@ class Settings(BaseSettings):
     llm_model: str = "qwen/qwen3.8-27b"
 
     # Concurrency & timeouts
-    max_concurrent_domains: int = 10
-    page_timeout_ms: int = 10_000  # 10s per page with asset blocking to prevent false timeouts
-    domain_timeout_s: int = 40  # 40s hard ceiling per domain (allows multi-domain batch queuing)
+    max_concurrent_domains: int = 5  # Pipelined domain batching prevents queue starvation
+    page_timeout_ms: int = 8_000  # 8s per page with asset blocking to prevent false timeouts
+    domain_timeout_s: int = 45  # 45s hard ceiling per domain once scheduled
     request_delay_s: tuple[float, float] = (0.1, 0.3)  # polite delay between page requests
 
-    # Content processing: 950 tokens captures homepage pitch, audience, and leadership
-    # while keeping prompt token payload compact and avoiding Groq's 7,000 ITPM rate limit.
-    token_budget: int = 950
+    # Content processing: 220 tokens strictly bounds prompt payload to avoid rate limits
+    token_budget: int = 220
 
     # Output
     output_dir: Path = Path("output")

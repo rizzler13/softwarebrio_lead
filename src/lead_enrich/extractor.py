@@ -26,9 +26,9 @@ log = structlog.get_logger()
 COST_PER_1M_INPUT = 0.59  # USD
 COST_PER_1M_OUTPUT = 0.79
 
-# Concurrency control for LLM calls — allow 3 parallel requests with gentle spacing
+# Concurrency control for LLM calls — allow 2 parallel requests with gentle spacing
 # to prevent exceeding rate limits on free-tier provider endpoints.
-_llm_semaphore = asyncio.Semaphore(3)
+_llm_semaphore = asyncio.Semaphore(2)
 
 
 def _is_retryable_error(exc: BaseException) -> bool:
@@ -44,30 +44,14 @@ def _is_retryable_error(exc: BaseException) -> bool:
 
 
 SYSTEM_PROMPT = (
-    "You are a lead enrichment analyst. Given text extracted from a "
-    "company's website, extract structured intelligence.\n\n"
-    "Be precise and factual — only include information that's clearly "
-    "stated or strongly implied in the text. Don't hallucinate team "
-    "members or make up emails.\n\n"
-    "For the company overview: write exactly 2 sentences. First sentence "
-    "= what the company does. Second sentence = what makes them notable "
-    "or different.\n\n"
-    "For contact emails: only include emails that look like general/public "
-    "addresses (contact@, sales@, support@, hello@, info@). Skip personal "
-    "emails and noreply addresses.\n\n"
-    "For team members: prioritize the top 3-5 founders and C-level/VP executives. "
-    "Do NOT include entire employee rosters or customer testimonial quotes. Only "
-    "include a LinkedIn URL if you can see one in the text.\n\n"
-    "For confidence score: honestly assess how complete your extraction is. "
-    "1.0 means every field is fully populated with high-quality data. "
-    "0.5 means you got the basics but missed significant pieces. "
-    "Below 0.3 means the page content was too thin to extract much."
+    "Extract structured lead intelligence from website content. "
+    "Be factual, concise, and strictly follow the schema."
 )
 
 
 @retry(
     stop=stop_after_attempt(4),
-    wait=wait_exponential(multiplier=2, min=2, max=20),
+    wait=wait_exponential(multiplier=1.5, min=4, max=20),
     retry=retry_if_exception(_is_retryable_error),
     before_sleep=lambda rs: log.warning(
         "llm_retry", attempt=rs.attempt_number, wait=rs.next_action.sleep
@@ -86,14 +70,12 @@ async def _call_llm(
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": (
-                    f"Extract structured intelligence for the company at {domain}.\n\n"
-                    f"Here is the content from their website:\n\n{text}"
-                ),
+                "content": f"Company: {domain}\n\nWebsite content:\n{text}",
             },
         ],
         response_model=CompanyIntel,
-        max_tokens=500,  # Compact budget to ensure rapid response and stay well within rate limits
+        # Bounded to 260 tokens: prevents mid-tag cutoff while staying well within 1,000 OTPM
+        max_tokens=260,
     )
 
 
@@ -110,7 +92,7 @@ async def extract_company_intel(
     client = instructor.from_groq(groq_client, mode=instructor.Mode.TOOLS)
 
     async with _llm_semaphore:
-        await asyncio.sleep(0.15)  # Micro-pacing prevents concurrent burst collisions
+        await asyncio.sleep(0.25)  # Micro-pacing prevents concurrent burst collisions
         try:
             intel, completion = await _call_llm(client, settings.llm_model, text, domain)
         except Exception as exc:
