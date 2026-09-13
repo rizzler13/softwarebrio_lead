@@ -76,10 +76,132 @@ def normalize_domain(raw: str) -> str:
     return (parsed.netloc or raw).lower().rstrip("/")
 
 
+DUMMY_EMAIL_DOMAINS = {
+    "example.com",
+    "example.org",
+    "example.net",
+    "acme.com",
+    "domain.com",
+    "sample.com",
+    "test.com",
+    "yourcompany.com",
+    "company.com",
+    "mysite.com",
+    "website.com",
+}
+
+DUMMY_EMAIL_PREFIXES = (
+    "bad_actor",
+    "your.name",
+    "username",
+    "test",
+    "sample",
+    "placeholder",
+    "fake",
+    "demo",
+    "jane.doe",
+    "john.doe",
+    "email",
+    "name",
+    "user",
+)
+
+VALID_TLDS = {
+    "com",
+    "org",
+    "net",
+    "io",
+    "ai",
+    "co",
+    "app",
+    "dev",
+    "so",
+    "me",
+    "us",
+    "uk",
+    "de",
+    "ca",
+    "fr",
+    "in",
+    "eu",
+}
+
+INVALID_EMAIL_EXTENSIONS = (
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".svg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".js",
+    ".css",
+    ".map",
+    ".woff",
+    ".woff2",
+)
+
+
 def _score_url(path: str) -> int:
-    """Rate how useful a URL path probably is based on keyword overlap."""
-    path_lower = path.lower()
-    return sum(weight for kw, weight in PAGE_KEYWORDS.items() if kw in path_lower)
+    """
+    Rate how useful a URL path probably is based on exact path segment semantics.
+    Prioritizes genuine about/team/leadership pages and excludes marketing persona landing pages.
+    """
+    path_lower = path.lower().strip("/")
+    segments = [s for s in path_lower.split("/") if s]
+
+    # Skip blog posts, changelog updates, docs, careers, legal, and persona solutions
+    skip_segments = {
+        "blog",
+        "changelog",
+        "news",
+        "press",
+        "events",
+        "docs",
+        "api",
+        "careers",
+        "jobs",
+        "legal",
+        "terms",
+        "privacy",
+        "security",
+        "solutions",
+        "customers",
+        "case-studies",
+        "integrations",
+        "templates",
+    }
+    if any(seg in skip_segments for seg in segments):
+        return 0
+
+    # Specifically reject persona pages like /for/data-teams or plural marketing landing /teams
+    if "for-" in path_lower or "/for/" in path_lower or path_lower.endswith("-teams"):
+        return 0
+    if path_lower in ("teams", "for/teams"):
+        return 0
+
+    score = 0
+    for seg in segments:
+        clean_seg = seg.replace("-", "").replace("_", "")
+        if clean_seg in ("about", "aboutus", "ourstory", "story"):
+            score = max(score, 12)
+        elif clean_seg in (
+            "team",
+            "leadership",
+            "people",
+            "executives",
+            "founders",
+            "meettheteam",
+        ):
+            score = max(score, 12)
+        elif clean_seg in ("company", "whoweare"):
+            score = max(score, 10)
+        elif clean_seg in ("contact", "contactus"):
+            score = max(score, 7)
+        elif clean_seg in ("pricing",):
+            score = max(score, 4)
+
+    return score
 
 
 def _is_same_domain(href: str, base_domain: str) -> bool:
@@ -105,15 +227,83 @@ def _check_robots(base_url: str, path: str) -> bool:
 
 
 def _extract_emails(text: str) -> list[str]:
-    """Pull email addresses out of page text. Only keeps plausible ones."""
-    pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-    found = set(re.findall(pattern, text))
-    # Filter out obvious junk (image filenames, etc.)
-    return sorted(
-        email.lower()
-        for email in found
-        if not email.endswith((".png", ".jpg", ".svg", ".gif", ".webp"))
-    )
+    """
+    Pull legitimate contact email addresses out of page text.
+    Filters dummy docs domains, placeholder handles, and concatenated text artifacts.
+    """
+    pattern = r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}\b"
+    found = re.findall(pattern, text)
+    cleaned = set()
+
+    for raw in found:
+        email = raw.lower().strip(".-_")
+        if not email or "@" not in email:
+            continue
+        user, _, domain = email.partition("@")
+
+        # Discard documentation / placeholder domains
+        if domain in DUMMY_EMAIL_DOMAINS or any(
+            domain.endswith("." + d) for d in DUMMY_EMAIL_DOMAINS
+        ):
+            continue
+
+        # Discard dummy username prefixes or prefixed digits + bad_actor
+        user_clean = re.sub(r"^\d+", "", user)
+        if any(user_clean.startswith(p) for p in DUMMY_EMAIL_PREFIXES):
+            continue
+
+        # Discard static asset files incorrectly captured
+        if any(email.endswith(ext) for ext in INVALID_EMAIL_EXTENSIONS):
+            continue
+
+        # Validate that the top-level domain is genuine (avoids 'comto', 'devsendhttp')
+        tld = domain.split(".")[-1]
+        if tld not in VALID_TLDS:
+            continue
+
+        # Normalize common concatenated preposition/pronoun prefixes
+        # (e.g. 'orsales' -> 'sales', 'ushello' -> 'hello')
+        for prefix in (
+            "or",
+            "and",
+            "to",
+            "for",
+            "at",
+            "us",
+            "in",
+            "by",
+            "from",
+            "with",
+            "email",
+            "mail",
+            "contact",
+            "addresses",
+        ):
+            if user.startswith(prefix) and len(user) > len(prefix) + 2:
+                sub = user[len(prefix) :]
+                if sub in (
+                    "sales",
+                    "support",
+                    "info",
+                    "contact",
+                    "help",
+                    "hello",
+                    "security",
+                    "team",
+                    "hi",
+                    "press",
+                    "media",
+                    "legal",
+                    "privacy",
+                    "jobs",
+                    "billing",
+                ):
+                    email = f"{sub}@{domain}"
+                    break
+
+        cleaned.add(email)
+
+    return sorted(cleaned)
 
 
 # Concurrency limit on concurrent page evaluations to prevent network/CPU saturation

@@ -283,56 +283,85 @@
   },
   {
     "domain": "notion.com",
-    "status": "failed",
-    "error_reason": "All page fetches failed",
-    "intel": null,
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Notion provides an AI-powered all-in-one workspace that combines notes, docs, databases, and workflow automation, helping teams collaborate faster and automate busywork.",
+      "target_audience": "Businesses and teams of all sizes looking for an integrated workspace to streamline collaboration, documentation, and automation.",
+      "contact_emails": [
+        "team@makenotion.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Ivan Zhao",
+          "role": "Founder at Notion",
+          "linkedin_url": "https://www.linkedin.com/in/ivanhzhao"
+        }
+      ],
+      "confidence_score": 0.82
+    },
     "token_usage": {
-      "prompt_tokens": 0,
-      "completion_tokens": 0,
-      "total_tokens": 0,
-      "estimated_cost_usd": 0.0
+      "prompt_tokens": 660,
+      "completion_tokens": 475,
+      "total_tokens": 1135,
+      "estimated_cost_usd": 0.000765
     },
     "timings": {
-      "fetch_s": 16.39,
-      "preprocess_s": 0.0,
-      "llm_s": 0.0,
-      "enrich_s": 0.0,
-      "total_s": 16.39
+      "fetch_s": 7.08,
+      "preprocess_s": 0.007,
+      "llm_s": 2.68,
+      "enrich_s": 3.51,
+      "total_s": 13.28
     },
-    "processing_time_s": 16.39,
-    "pages_fetched": 0,
+    "processing_time_s": 13.28,
+    "pages_fetched": 3,
     "urls_discovered": [
       "https://notion.com",
       "https://notion.com/about",
-      "https://notion.com/teams",
-      "https://notion.com/contact-sales"
+      "https://notion.com/pricing"
     ]
   },
   {
     "domain": "stripe.com",
-    "status": "failed",
-    "error_reason": "All page fetches failed",
-    "intel": null,
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Stripe is a financial services platform that helps businesses of all sizes accept payments, build flexible billing models, and manage money movement.",
+      "target_audience": "Businesses of all sizes, from solo founders to large enterprises, that need payment processing and financial infrastructure.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "William Gaybrick",
+          "role": "President, Technology and Business at Stripe",
+          "linkedin_url": "https://www.linkedin.com/in/william-gaybrick-5730347"
+        },
+        {
+          "name": "Maureen Aguilar",
+          "role": "Co-Founder at Stripe",
+          "linkedin_url": "https://www.linkedin.com/in/maureen-aguilar-a6609b24a"
+        }
+      ],
+      "confidence_score": 0.81
+    },
     "token_usage": {
-      "prompt_tokens": 0,
-      "completion_tokens": 0,
-      "total_tokens": 0,
-      "estimated_cost_usd": 0.0
+      "prompt_tokens": 659,
+      "completion_tokens": 278,
+      "total_tokens": 937,
+      "estimated_cost_usd": 0.000608
     },
     "timings": {
-      "fetch_s": 12.43,
-      "preprocess_s": 0.0,
-      "llm_s": 0.0,
-      "enrich_s": 0.0,
-      "total_s": 12.43
+      "fetch_s": 4.39,
+      "preprocess_s": 0.004,
+      "llm_s": 1.35,
+      "enrich_s": 1.07,
+      "total_s": 6.81
     },
-    "processing_time_s": 12.43,
-    "pages_fetched": 0,
+    "processing_time_s": 6.81,
+    "pages_fetched": 3,
     "urls_discovered": [
       "https://stripe.com",
       "https://stripe.com/in/about",
-      "https://stripe.com/in/contact/sales",
-      "https://stripe.com/in/pricing"
+      "https://stripe.com/in/contact/sales"
     ]
   },
   {
@@ -340,76 +369,75 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Linear is a product development platform that helps teams manage issues, projects, and product strategy through features like team-based initiatives. It differentiates itself with enterprise-grade security features such as Okta-managed identity verification for its MCP integration and private team visibility for sensitive planning work.",
-      "target_audience": "Product development teams and engineering organizations, ranging from startups to enterprises, who need to manage product strategy, issues, and projects.",
-      "contact_emails": [],
+      "company_overview": "Linear offers a purpose-built product development platform that enables teams and AI agents to plan, coordinate, and build software products efficiently.",
+      "target_audience": "Product teams, developers, and product managers building software in the AI era.",
+      "contact_emails": [
+        "hello@linear.app"
+      ],
       "key_team_members": [
         {
           "name": "Karri Saarinen",
-          "role": "Co-Founder, CEO",
+          "role": "Co-Founder, CEO at Linear",
           "linkedin_url": "https://www.linkedin.com/in/karrisaarinen"
-        },
-        {
-          "name": "Tuomas Artman",
-          "role": "Co-Founder",
-          "linkedin_url": "https://es.linkedin.com/in/tuomasartman"
-        },
-        {
-          "name": "Jori Lallo",
-          "role": "Co-Founder",
-          "linkedin_url": "https://www.linkedin.com/in/jorilallo"
         }
       ],
-      "confidence_score": 0.68
+      "confidence_score": 0.82
     },
     "token_usage": {
-      "prompt_tokens": 1311,
-      "completion_tokens": 161,
-      "total_tokens": 1472,
-      "estimated_cost_usd": 0.000901
+      "prompt_tokens": 660,
+      "completion_tokens": 285,
+      "total_tokens": 945,
+      "estimated_cost_usd": 0.000615
     },
     "timings": {
-      "fetch_s": 16.41,
-      "preprocess_s": 0.001,
-      "llm_s": 1.15,
-      "enrich_s": 10.75,
-      "total_s": 28.32
+      "fetch_s": 3.04,
+      "preprocess_s": 0.03,
+      "llm_s": 2.81,
+      "enrich_s": 5.38,
+      "total_s": 11.26
     },
-    "processing_time_s": 28.32,
-    "pages_fetched": 1,
+    "processing_time_s": 11.26,
+    "pages_fetched": 3,
     "urls_discovered": [
       "https://linear.app",
-      "https://linear.app/changelog/2026-08-13-team-initiatives",
       "https://linear.app/about",
       "https://linear.app/contact"
     ]
   },
   {
     "domain": "railway.app",
-    "status": "failed",
-    "error_reason": "All page fetches failed",
-    "intel": null,
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Railway provides an all-in-one intelligent cloud platform that simplifies deploying web apps, servers, databases, and other services with automatic scaling, monitoring, and security.",
+      "target_audience": "Software developers, development teams, and startups looking for streamlined cloud deployment and infrastructure management.",
+      "contact_emails": [
+        "bugbounty@railway.com",
+        "privacy@railway.com",
+        "support@railway.com"
+      ],
+      "key_team_members": [],
+      "confidence_score": 0.66
+    },
     "token_usage": {
-      "prompt_tokens": 0,
-      "completion_tokens": 0,
-      "total_tokens": 0,
-      "estimated_cost_usd": 0.0
+      "prompt_tokens": 655,
+      "completion_tokens": 250,
+      "total_tokens": 905,
+      "estimated_cost_usd": 0.000584
     },
     "timings": {
-      "fetch_s": 16.39,
-      "preprocess_s": 0.0,
-      "llm_s": 0.0,
-      "enrich_s": 0.0,
-      "total_s": 16.39
+      "fetch_s": 7.22,
+      "preprocess_s": 0.004,
+      "llm_s": 1.32,
+      "enrich_s": 3.63,
+      "total_s": 12.17
     },
-    "processing_time_s": 16.39,
-    "pages_fetched": 0,
+    "processing_time_s": 12.17,
+    "pages_fetched": 2,
     "urls_discovered": [
       "https://railway.app",
       "https://railway.app/about",
-      "https://railway.app/team",
-      "https://railway.app/company",
-      "https://railway.app/contact"
+      "https://railway.app/team"
     ]
   },
   {
@@ -417,51 +445,45 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Resend is an email infrastructure platform that enables developers to deliver transactional and marketing emails at scale through a developer-first API, SDKs, and a React-based visual editor. Notable for its \"developer experience\" focus, it powers email templates via the open-source react-email library and is trusted by companies of all sizes for high-deliverability email sending.",
-      "target_audience": "Software developers and engineering teams building applications that require transactional, onboarding, or marketing email delivery; also marketing teams managing newsletters and campaigns.",
+      "company_overview": "Resend provides a modern email sending platform that enables developers to deliver transactional and marketing emails at scale, focusing on reaching inboxes rather than spam folders.",
+      "target_audience": "Developers and product teams building applications who need to send transactional and marketing emails, as well as companies of all sizes requiring reliable email delivery.",
       "contact_emails": [
         "bu@resend.com",
         "delivered@resend.dev",
         "jonni@resend.com",
         "onboarding@resend.dev",
         "support@resend.com",
-        "your.name@acme.com",
         "zeh@resend.com",
         "zeno@resend.com"
       ],
       "key_team_members": [
         {
-          "name": "Bu Kinoshita",
-          "role": "Executive / Founder",
-          "linkedin_url": "https://br.linkedin.com/in/bkinoshita"
+          "name": "Zeno Rocha",
+          "role": "Founder & CEO at Resend",
+          "linkedin_url": "https://www.linkedin.com/in/zenorocha"
         },
         {
           "name": "Jonni Lundy",
-          "role": "Executive / Founder",
+          "role": "Cofounder & COO at Resend",
           "linkedin_url": "https://www.linkedin.com/in/jonnilundy"
-        },
-        {
-          "name": "Erin Zidelis",
-          "role": "Executive / Founder",
-          "linkedin_url": "https://www.linkedin.com/in/erinklevine"
         }
       ],
-      "confidence_score": 0.86
+      "confidence_score": 0.91
     },
     "token_usage": {
-      "prompt_tokens": 2468,
-      "completion_tokens": 189,
-      "total_tokens": 2657,
-      "estimated_cost_usd": 0.001605
+      "prompt_tokens": 653,
+      "completion_tokens": 414,
+      "total_tokens": 1067,
+      "estimated_cost_usd": 0.000712
     },
     "timings": {
-      "fetch_s": 6.34,
-      "preprocess_s": 0.004,
-      "llm_s": 2.79,
-      "enrich_s": 2.91,
-      "total_s": 12.05
+      "fetch_s": 8.99,
+      "preprocess_s": 0.006,
+      "llm_s": 2.15,
+      "enrich_s": 0.91,
+      "total_s": 12.04
     },
-    "processing_time_s": 12.05,
+    "processing_time_s": 12.04,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://resend.com",
@@ -471,29 +493,42 @@
   },
   {
     "domain": "airtable.com",
-    "status": "failed",
-    "error_reason": "All page fetches failed",
-    "intel": null,
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Airtable is a no‑code collaboration platform that lets teams build AI‑powered, customizable workflows and apps to manage data and automate tasks without technical expertise.",
+      "target_audience": "Teams and organizations of all sizes seeking a flexible, no‑code solution for data management, workflow automation, and collaborative app building.",
+      "contact_emails": [
+        "security@airtable.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Emmett Nicholas",
+          "role": "Co-founder at Airtable",
+          "linkedin_url": "https://www.linkedin.com/in/emmett-nicholas"
+        }
+      ],
+      "confidence_score": 0.82
+    },
     "token_usage": {
-      "prompt_tokens": 0,
-      "completion_tokens": 0,
-      "total_tokens": 0,
-      "estimated_cost_usd": 0.0
+      "prompt_tokens": 660,
+      "completion_tokens": 134,
+      "total_tokens": 794,
+      "estimated_cost_usd": 0.000495
     },
     "timings": {
-      "fetch_s": 12.44,
-      "preprocess_s": 0.0,
-      "llm_s": 0.0,
-      "enrich_s": 0.0,
-      "total_s": 12.44
+      "fetch_s": 3.81,
+      "preprocess_s": 0.002,
+      "llm_s": 1.06,
+      "enrich_s": 1.18,
+      "total_s": 6.06
     },
-    "processing_time_s": 12.44,
-    "pages_fetched": 0,
+    "processing_time_s": 6.06,
+    "pages_fetched": 3,
     "urls_discovered": [
       "https://airtable.com",
       "https://airtable.com/about",
-      "https://airtable.com/company/trust-and-security",
-      "https://airtable.com/company/privacy"
+      "https://airtable.com/company/trust-and-security"
     ]
   },
   {
@@ -501,55 +536,39 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Retool provides a unified platform for building, deploying, and managing internal business applications that connect to any database, API, or LLM. What sets them apart is their production-grade approach to internal tools—offering AI-powered app generation (AppGen), governance built-in by default (RBAC, audit logs), and an AI agent system that doesn't just display data but acts on it through autonomous workflows and write-back capabilities.",
-      "target_audience": "Data teams, engineering teams, operations teams, financial services, manufacturing, enterprise, and startups looking to build production-ready internal tools without being bottlenecked by engineering resources.",
+      "company_overview": "Retool provides a unified platform for building, deploying, and managing internal tools that connect to any database, API, or LLM, enabling businesses to create mission‑critical applications quickly.",
+      "target_audience": "Enterprises and growing companies that need internal tools and custom applications for operations, engineering, product, and other business teams.",
       "contact_emails": [
         "support@retool.com"
       ],
       "key_team_members": [
         {
-          "name": "Sam Garfield",
-          "role": "Author (likely blog/product content)",
-          "linkedin_url": "https://www.linkedin.com/in/samuelholdengarfield"
-        },
-        {
-          "name": "David Huie",
-          "role": "Co-Founder & CEO",
-          "linkedin_url": "https://www.linkedin.com/in/daviddd"
-        },
-        {
-          "name": "Chris Pires",
-          "role": "Co-Founder & CTO",
-          "linkedin_url": "https://www.linkedin.com/in/chris-pires-7301b360"
-        },
-        {
-          "name": "Jason Dent",
-          "role": "Chief Legal Officer",
-          "linkedin_url": "https://www.linkedin.com/in/jadent"
+          "name": "David Hsu",
+          "role": "CEO",
+          "linkedin_url": "https://www.linkedin.com/in/dvdhsu"
         }
       ],
-      "confidence_score": 0.86
+      "confidence_score": 0.82
     },
     "token_usage": {
-      "prompt_tokens": 2307,
-      "completion_tokens": 229,
-      "total_tokens": 2536,
-      "estimated_cost_usd": 0.001542
+      "prompt_tokens": 658,
+      "completion_tokens": 228,
+      "total_tokens": 886,
+      "estimated_cost_usd": 0.000568
     },
     "timings": {
-      "fetch_s": 16.33,
-      "preprocess_s": 0.01,
-      "llm_s": 1.47,
-      "enrich_s": 6.44,
-      "total_s": 24.25
+      "fetch_s": 2.27,
+      "preprocess_s": 0.004,
+      "llm_s": 1.26,
+      "enrich_s": 2.65,
+      "total_s": 6.19
     },
-    "processing_time_s": 24.25,
-    "pages_fetched": 2,
+    "processing_time_s": 6.19,
+    "pages_fetched": 3,
     "urls_discovered": [
       "https://retool.com",
-      "https://retool.com/for/data-teams",
-      "https://retool.com/for/engineering-teams",
-      "https://retool.com/for/operations-teams"
+      "https://retool.com/about",
+      "https://retool.com/pricing"
     ]
   },
   {
@@ -557,48 +576,40 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Clerk provides authentication, user management, multi-tenancy, and billing components purpose-built for modern web frameworks like React, Next.js, and Remix. Notable for its developer-first UX (drop-in components and an AI-agent-focused CLI), SOC 2 Type 2 / CCPA compliance, and a recent $50M Series C backed by industry leaders like Vercel, Stripe, and Supabase.",
-      "target_audience": "Developers and engineering teams building modern web and mobile applications (React, Next.js, Remix, Expo) who need production-ready authentication, user/organization management, and subscription billing without building it in-house.",
+      "company_overview": "Clerk builds authentication, user management, and billing solutions for modern web applications, offering prebuilt UI components and a developer-focused experience.",
+      "target_audience": "Developers and product teams building modern web apps with frameworks like React, Next.js, and Remix who need authentication and user management.",
       "contact_emails": [
-        "another.bad.actor@example.com",
-        "bad_actor+1@example.com",
-        "bad_actor+2@example.com",
-        "bad_actor+3@example.com",
-        "chris.walker@example.com",
-        "chris94@example.com",
-        "cwalker@example.com",
         "sales@clerk.dev",
         "support@clerk.com"
       ],
       "key_team_members": [
         {
-          "name": "Guillermo Rauch",
-          "role": "CEO, Vercel (customer)",
-          "linkedin_url": "https://www.linkedin.com/in/kevinrose"
+          "name": "Braden Sidoti",
+          "role": "CTO & Builder @ Clerk",
+          "linkedin_url": "https://www.linkedin.com/in/braden-sidoti-25676537"
         }
       ],
-      "confidence_score": 0.83
+      "confidence_score": 0.82
     },
     "token_usage": {
-      "prompt_tokens": 2807,
-      "completion_tokens": 244,
-      "total_tokens": 3051,
-      "estimated_cost_usd": 0.001849
+      "prompt_tokens": 652,
+      "completion_tokens": 233,
+      "total_tokens": 885,
+      "estimated_cost_usd": 0.000569
     },
     "timings": {
-      "fetch_s": 12.44,
-      "preprocess_s": 0.054,
-      "llm_s": 3.65,
-      "enrich_s": 1.97,
-      "total_s": 18.11
+      "fetch_s": 2.2,
+      "preprocess_s": 0.004,
+      "llm_s": 1.3,
+      "enrich_s": 2.58,
+      "total_s": 6.07
     },
-    "processing_time_s": 18.11,
+    "processing_time_s": 6.07,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://clerk.com",
       "https://clerk.com/company",
-      "https://clerk.com/contact",
-      "https://clerk.com/pricing"
+      "https://clerk.com/contact"
     ]
   },
   {
@@ -613,20 +624,18 @@
       "estimated_cost_usd": 0.0
     },
     "timings": {
-      "fetch_s": 10.53,
+      "fetch_s": 0.35,
       "preprocess_s": 0.0,
       "llm_s": 0.0,
       "enrich_s": 0.0,
-      "total_s": 10.7
+      "total_s": 0.35
     },
-    "processing_time_s": 10.7,
+    "processing_time_s": 0.35,
     "pages_fetched": 0,
     "urls_discovered": [
       "https://thisdomaindoesnotexist12345.com",
       "https://thisdomaindoesnotexist12345.com/about",
-      "https://thisdomaindoesnotexist12345.com/team",
-      "https://thisdomaindoesnotexist12345.com/company",
-      "https://thisdomaindoesnotexist12345.com/contact"
+      "https://thisdomaindoesnotexist12345.com/team"
     ]
   },
   {
@@ -641,20 +650,18 @@
       "estimated_cost_usd": 0.0
     },
     "timings": {
-      "fetch_s": 18.39,
+      "fetch_s": 16.24,
       "preprocess_s": 0.0,
       "llm_s": 0.0,
       "enrich_s": 0.0,
-      "total_s": 18.39
+      "total_s": 16.24
     },
-    "processing_time_s": 18.39,
+    "processing_time_s": 16.24,
     "pages_fetched": 0,
     "urls_discovered": [
       "https://httpstat.us",
       "https://httpstat.us/about",
-      "https://httpstat.us/team",
-      "https://httpstat.us/company",
-      "https://httpstat.us/contact"
+      "https://httpstat.us/team"
     ]
   },
   {

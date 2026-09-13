@@ -14,10 +14,11 @@ import asyncio
 import instructor
 import structlog
 from groq import APIStatusError, AsyncGroq, RateLimitError
+from pydantic import BaseModel, Field
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from lead_enrich.config import Settings
-from lead_enrich.models import CompanyIntel, TokenUsage
+from lead_enrich.models import CompanyIntel, TeamMember, TokenUsage
 
 log = structlog.get_logger()
 
@@ -44,9 +45,32 @@ def _is_retryable_error(exc: BaseException) -> bool:
 
 
 SYSTEM_PROMPT = (
-    "Extract structured lead intelligence from website content. "
-    "Be factual, concise, and strictly follow the schema."
+    "You are a lead intelligence analyst extracting structured data for a target company.\n"
+    "CRITICAL RULES:\n"
+    "- Only extract founders and executive leadership who work directly for the TARGET company,\n"
+    "  including their job title/role.\n"
+    "- NEVER extract customer testimonials, partner quotes, or customer logos as team members.\n"
+    "- If no founders/executives are explicitly named in the text, leave key_team_members as [].\n"
+    "- Company overview: 1-2 concise sentences of what they do and why notable.\n"
+    "- Target audience: primary customer/user segments."
 )
+
+
+class _LLMCompanyIntel(BaseModel):
+    """Extraction target for Instructor to avoid floating-point syntax quirks across models."""
+
+    company_overview: str = Field(
+        "", description="Concise 1-2 sentence summary of what the company does and why notable."
+    )
+    target_audience: str = Field(
+        "", description="Primary target customer and user personas."
+    )
+    contact_emails: list[str] = Field(
+        default_factory=list, description="Generic contact emails found on the page."
+    )
+    key_team_members: list[TeamMember] = Field(
+        default_factory=list, description="Founders or C-level executive leaders only."
+    )
 
 
 @retry(
@@ -62,9 +86,10 @@ async def _call_llm(
     model: str,
     text: str,
     domain: str,
-):
+    max_tokens: int = 650,
+) -> tuple[CompanyIntel, any]:
     """Execute Instructor completion under retry policy with bounded output tokens."""
-    return await client.chat.completions.create_with_completion(
+    raw_intel, completion = await client.chat.completions.create_with_completion(
         model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -73,10 +98,18 @@ async def _call_llm(
                 "content": f"Company: {domain}\n\nWebsite content:\n{text}",
             },
         ],
-        response_model=CompanyIntel,
-        # Bounded to 260 tokens: prevents mid-tag cutoff while staying well within 1,000 OTPM
-        max_tokens=260,
+        response_model=_LLMCompanyIntel,
+        # 650 tokens allows complete JSON structure without truncation
+        max_tokens=max_tokens,
     )
+    intel = CompanyIntel(
+        company_overview=raw_intel.company_overview,
+        target_audience=raw_intel.target_audience,
+        contact_emails=raw_intel.contact_emails,
+        key_team_members=raw_intel.key_team_members,
+        confidence_score=0.8,
+    )
+    return intel, completion
 
 
 async def extract_company_intel(
@@ -96,9 +129,23 @@ async def extract_company_intel(
         try:
             intel, completion = await _call_llm(client, settings.llm_model, text, domain)
         except Exception as exc:
-            # If request exceeded token limits, cut text and try one adaptive fallback
             err_msg = str(exc).lower()
-            if "too large" in err_msg or "rate_limit" in err_msg or "413" in err_msg:
+            if "tokens per day" in err_msg or "tpd" in err_msg or "daily" in err_msg:
+                fallback_model = (
+                    "openai/gpt-oss-20b"
+                    if settings.llm_model != "openai/gpt-oss-20b"
+                    else "qwen/qwen3.6-27b"
+                )
+                log.warning("model_quota_fallback", domain=domain, fallback=fallback_model)
+                intel, completion = await _call_llm(client, fallback_model, text, domain)
+            elif "parse tool call" in err_msg or "tool_use_failed" in err_msg or "400" in err_msg:
+                log.warning("tool_parse_fallback_json", domain=domain)
+                json_client = instructor.from_groq(groq_client, mode=instructor.Mode.JSON)
+                await asyncio.sleep(0.4)
+                intel, completion = await _call_llm(
+                    json_client, settings.llm_model, text, domain, max_tokens=700
+                )
+            elif "too large" in err_msg or "rate_limit" in err_msg or "413" in err_msg:
                 log.warning("llm_tokens_exceeded_fallback", domain=domain, original_len=len(text))
                 truncated_text = text[: int(len(text) * 0.55)]
                 await asyncio.sleep(0.8)

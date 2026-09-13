@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     groq_api_key: str
     tavily_api_key: str = ""  # optional — enrichment degrades gracefully without it
 
-    # Model (qwen/qwen3.8-27b is currently active on Groq with native tool-use support)
-    llm_model: str = "qwen/qwen3.8-27b"
+    # Model (openai/gpt-oss-120b provides high throughput and reliable structured outputs)
+    llm_model: str = "openai/gpt-oss-120b"
 
     # Concurrency & timeouts
     max_concurrent_domains: int = 5  # Pipelined domain batching prevents queue starvation
@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     domain_timeout_s: int = 45  # 45s hard ceiling per domain once scheduled
     request_delay_s: tuple[float, float] = (0.1, 0.3)  # polite delay between page requests
 
-    # Content processing: 220 tokens strictly bounds prompt payload to avoid rate limits
-    token_budget: int = 220
+    # Content processing: 320 tokens splits cleanly between homepage pitch and team page
+    token_budget: int = 320
 
     # Output
     output_dir: Path = Path("output")

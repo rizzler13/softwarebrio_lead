@@ -102,10 +102,14 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
     """
     Merge and trim page content to fit strictly within the token budget.
 
-    Strategy: prioritize about/team pages, truncate lower-value pages first.
-    Uses exact token truncation to guarantee the LLM input never exceeds the budget.
+    Strategy: prioritizes homepage and about/team pages. If an about/team page
+    exists, caps homepage consumption so the leadership page is never starved.
     """
     sorted_pages = sorted(pages, key=_page_priority, reverse=True)
+
+    # Check if a dedicated about/team page is present in the set
+    has_about_page = any(_page_priority(p) == 3 for p in sorted_pages if not p.error)
+    max_homepage_tokens = int(token_budget * 0.52) if has_about_page else token_budget
 
     sections: list[str] = []
     tokens_used = 0
@@ -127,20 +131,24 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
 
         section = f"{header}\n{cleaned}"
         encoded_section = _encoder.encode(section)
-        section_tokens = len(encoded_section)
 
-        remaining = token_budget - tokens_used
-        if remaining <= 0:
+        remaining_total = token_budget - tokens_used
+        if remaining_total <= 0:
             break
 
-        if section_tokens <= remaining:
+        is_homepage = _page_priority(page) == 4
+        allowed_for_page = min(
+            remaining_total, max_homepage_tokens if is_homepage else remaining_total
+        )
+
+        if len(encoded_section) <= allowed_for_page:
             sections.append(section)
-            tokens_used += section_tokens
+            tokens_used += len(encoded_section)
         else:
-            # Token-exact truncation: decode only what fits in the remaining budget
-            truncated = _encoder.decode(encoded_section[:remaining]) + "\n[...]"
+            truncated = _encoder.decode(encoded_section[:allowed_for_page]) + "\n[...]"
             sections.append(truncated)
-            tokens_used += remaining
-            break
+            tokens_used += allowed_for_page
+            if not is_homepage:
+                break
 
     return "\n\n".join(sections)
