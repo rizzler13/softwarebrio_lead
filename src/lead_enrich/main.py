@@ -29,6 +29,7 @@ from lead_enrich.extractor import extract_company_intel
 from lead_enrich.models import DomainResult, ProcessingStatus
 from lead_enrich.preprocessor import prepare_llm_input
 from lead_enrich.scorer import compute_confidence
+from lead_enrich.trigger_agent import discover_trigger_event
 from lead_enrich.writer import write_run_output
 
 # Ensure stdout and stderr use blocking I/O so logging writes never raise
@@ -158,11 +159,27 @@ async def process_domain(domain: str, settings: Settings, browser=None) -> Domai
         llm_emails = set(intel.contact_emails)
         intel.contact_emails = sorted(browser_emails | llm_emails)
 
-        # Stage 5: Enrich with LinkedIn search (and external founder lookup if missing)
+        # Stage 5: Enrich with LinkedIn search and discover trigger event concurrently
         t_enrich_start = time.monotonic()
-        intel = await enrich_linkedin_urls(intel, clean_domain, settings)
+        enrich_task = asyncio.create_task(enrich_linkedin_urls(intel, clean_domain, settings))
+        trigger_task = asyncio.create_task(discover_trigger_event(clean_domain, settings))
+
+        intel, (trigger_event, trigger_status, trigger_duration) = await asyncio.gather(
+            enrich_task,
+            trigger_task,
+        )
         result.timings.enrich_s = round(time.monotonic() - t_enrich_start, 2)
-        log.info("stage_enrich_complete", domain=clean_domain, duration_s=result.timings.enrich_s)
+        result.timings.trigger_s = round(trigger_duration, 2)
+        result.trigger_event_status = trigger_status
+        if intel:
+            intel.trigger_event = trigger_event
+        log.info(
+            "stage_enrich_complete",
+            domain=clean_domain,
+            enrich_duration_s=result.timings.enrich_s,
+            trigger_duration_s=result.timings.trigger_s,
+            trigger_found=trigger_event.found if trigger_event else False,
+        )
 
         # Stage 6: Compute blended confidence score
         intel.confidence_score = compute_confidence(intel)

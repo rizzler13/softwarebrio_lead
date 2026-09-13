@@ -8,6 +8,7 @@ and final output format all defined here so nothing drifts.
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +26,22 @@ class PageContent(BaseModel):
     meta_description: str = ""
     status_code: int = 200
     error: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Agentic Trigger Event model
+# ---------------------------------------------------------------------------
+
+
+class TriggerEvent(BaseModel):
+    """Recent company trigger event discovered by the agentic Browser-Use stage."""
+
+    found: bool = False
+    event_type: Literal["funding", "leadership_change", "product_news", "other"] | None = None
+    summary: str | None = None  # 1-2 sentences in the agent's own words
+    source_url: str | None = None  # the page where it was found/confirmed
+    estimated_date: str | None = None  # month/year or date string
+    confidence: float = Field(0.0, ge=0.0, le=1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -69,6 +86,7 @@ class CompanyIntel(BaseModel):
         le=1.0,
         description="Confidence score between 0.0 and 1.0.",
     )
+    trigger_event: TriggerEvent | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +116,7 @@ class StageTimings(BaseModel):
     preprocess_s: float = 0.0
     llm_s: float = 0.0
     enrich_s: float = 0.0
+    trigger_s: float = 0.0
     total_s: float = 0.0
 
 
@@ -108,6 +127,7 @@ class DomainResult(BaseModel):
     status: ProcessingStatus = ProcessingStatus.FAILED
     error_reason: str = ""
     intel: CompanyIntel | None = None
+    trigger_event_status: str | None = None
     token_usage: TokenUsage = Field(default_factory=TokenUsage)
     timings: StageTimings = Field(default_factory=StageTimings)
     processing_time_s: float = 0.0
@@ -151,3 +171,8 @@ class RunManifest(BaseModel):
 
     # Quality
     avg_confidence_score: float
+
+    # Agentic stage telemetry
+    trigger_events_found: int = 0
+    avg_trigger_stage_duration_s: float = 0.0
+    trigger_stage_timeouts: int = 0

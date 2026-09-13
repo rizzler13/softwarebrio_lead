@@ -374,34 +374,31 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Linear is a product development platform designed for teams and AI agents, offering tools to plan, build, and launch software efficiently in the AI era.",
-      "target_audience": "Product teams, software developers, and organizations building digital products who need coordinated planning and AI‑enhanced workflows.",
+      "company_overview": "Linear provides a purpose-built product development system that combines issue tracking, project planning, and AI agents to help software teams build and launch products efficiently.",
+      "target_audience": "Software development teams and product managers looking for integrated planning and AI‑enhanced workflows.",
       "contact_emails": [
         "hello@linear.app"
       ],
-      "key_team_members": [
-        {
-          "name": "Karri Saarinen",
-          "role": "Co-Founder, CEO at Linear",
-          "linkedin_url": "https://www.linkedin.com/in/karrisaarinen"
-        }
-      ],
-      "confidence_score": 0.82
+      "key_team_members": [],
+      "confidence_score": 0.66,
+      "trigger_event": null
     },
+    "trigger_event_status": "timeout",
     "token_usage": {
       "prompt_tokens": 660,
-      "completion_tokens": 161,
-      "total_tokens": 821,
-      "estimated_cost_usd": 0.000517
+      "completion_tokens": 147,
+      "total_tokens": 807,
+      "estimated_cost_usd": 0.000506
     },
     "timings": {
-      "fetch_s": 4.35,
-      "preprocess_s": 0.044,
-      "llm_s": 3.52,
-      "enrich_s": 4.41,
-      "total_s": 12.32
+      "fetch_s": 5.09,
+      "preprocess_s": 0.019,
+      "llm_s": 1.93,
+      "enrich_s": 52.14,
+      "trigger_s": 52.11,
+      "total_s": 59.17
     },
-    "processing_time_s": 12.32,
+    "processing_time_s": 59.17,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://linear.app",
@@ -414,30 +411,33 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Railway is an all-in-one intelligent cloud platform that lets developers deploy web apps, servers, databases, and more with automatic scaling, monitoring, and security.",
-      "target_audience": "Developers and software teams building web applications, SaaS products, and startups seeking a streamlined cloud deployment solution.",
+      "company_overview": "Railway is an all‑in‑one intelligent cloud platform that lets developers deploy web apps, servers, databases, and other services with automatic scaling, monitoring, and security.",
+      "target_audience": "Developers and development teams building web applications and services who need a simple, auto‑configuring cloud infrastructure.",
       "contact_emails": [
         "bugbounty@railway.com",
         "privacy@railway.com",
         "support@railway.com"
       ],
       "key_team_members": [],
-      "confidence_score": 0.66
+      "confidence_score": 0.66,
+      "trigger_event": null
     },
+    "trigger_event_status": "timeout",
     "token_usage": {
-      "prompt_tokens": 655,
-      "completion_tokens": 304,
-      "total_tokens": 959,
-      "estimated_cost_usd": 0.000627
+      "prompt_tokens": 654,
+      "completion_tokens": 267,
+      "total_tokens": 921,
+      "estimated_cost_usd": 0.000597
     },
     "timings": {
-      "fetch_s": 8.62,
-      "preprocess_s": 0.005,
-      "llm_s": 1.47,
-      "enrich_s": 3.7,
-      "total_s": 13.8
+      "fetch_s": 8.01,
+      "preprocess_s": 0.003,
+      "llm_s": 1.52,
+      "enrich_s": 49.64,
+      "trigger_s": 49.62,
+      "total_s": 59.18
     },
-    "processing_time_s": 13.8,
+    "processing_time_s": 59.18,
     "pages_fetched": 2,
     "urls_discovered": [
       "https://railway.app",
@@ -450,8 +450,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Resend offers a modern email sending platform that lets developers deliver transactional and marketing emails at scale, helping messages reach inboxes instead of spam folders.",
-      "target_audience": "Developers and product teams building applications that need reliable transactional and marketing email delivery, including startups and enterprise businesses.",
+      "company_overview": "Resend provides a modern email sending platform with SDKs for multiple languages, allowing developers and companies to send transactional and marketing emails at scale with improved deliverability.",
+      "target_audience": "Developers and businesses of all sizes that need to send transactional and marketing emails, including startups, enterprises, and SaaS platforms.",
       "contact_emails": [
         "bu@resend.com",
         "delivered@resend.dev",
@@ -461,34 +461,26 @@
         "zeh@resend.com",
         "zeno@resend.com"
       ],
-      "key_team_members": [
-        {
-          "name": "Zeno Rocha",
-          "role": "Founder & CEO at Resend",
-          "linkedin_url": "https://www.linkedin.com/in/zenorocha"
-        },
-        {
-          "name": "Jonni Lundy",
-          "role": "Cofounder & COO at Resend",
-          "linkedin_url": "https://www.linkedin.com/in/jonnilundy"
-        }
-      ],
-      "confidence_score": 0.91
+      "key_team_members": [],
+      "confidence_score": 0.66,
+      "trigger_event": null
     },
+    "trigger_event_status": "timeout",
     "token_usage": {
       "prompt_tokens": 653,
-      "completion_tokens": 346,
-      "total_tokens": 999,
-      "estimated_cost_usd": 0.000659
+      "completion_tokens": 434,
+      "total_tokens": 1087,
+      "estimated_cost_usd": 0.000728
     },
     "timings": {
-      "fetch_s": 3.57,
-      "preprocess_s": 0.01,
-      "llm_s": 1.52,
-      "enrich_s": 0.87,
-      "total_s": 5.97
+      "fetch_s": 5.91,
+      "preprocess_s": 0.006,
+      "llm_s": 2.77,
+      "enrich_s": 50.49,
+      "trigger_s": 50.47,
+      "total_s": 59.17
     },
-    "processing_time_s": 5.97,
+    "processing_time_s": 59.17,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://resend.com",

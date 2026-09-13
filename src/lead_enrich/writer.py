@@ -25,10 +25,17 @@ CSV_FIELDNAMES = [
     "contact_emails",
     "key_team_members",
     "confidence_score",
+    "trigger_event_found",
+    "trigger_event_type",
+    "trigger_event_summary",
+    "trigger_event_source",
+    "trigger_event_date",
+    "trigger_event_confidence",
     "fetch_s",
     "preprocess_s",
     "llm_s",
     "enrich_s",
+    "trigger_s",
     "prompt_tokens",
     "completion_tokens",
     "total_tokens",
@@ -57,6 +64,7 @@ def _format_csv_row(result: DomainResult) -> dict:
     intel = result.intel
     team_str = ""
     emails_str = ""
+    trigger = intel.trigger_event if intel else None
 
     if intel:
         team_str = "; ".join(
@@ -74,10 +82,17 @@ def _format_csv_row(result: DomainResult) -> dict:
         "contact_emails": emails_str,
         "key_team_members": team_str,
         "confidence_score": intel.confidence_score if intel else 0.0,
+        "trigger_event_found": trigger.found if trigger else False,
+        "trigger_event_type": trigger.event_type if trigger and trigger.found else "",
+        "trigger_event_summary": trigger.summary if trigger and trigger.found else "",
+        "trigger_event_source": trigger.source_url if trigger and trigger.found else "",
+        "trigger_event_date": trigger.estimated_date if trigger and trigger.found else "",
+        "trigger_event_confidence": trigger.confidence if trigger else 0.0,
         "fetch_s": result.timings.fetch_s,
         "preprocess_s": result.timings.preprocess_s,
         "llm_s": result.timings.llm_s,
         "enrich_s": result.timings.enrich_s,
+        "trigger_s": result.timings.trigger_s,
         "prompt_tokens": result.token_usage.prompt_tokens,
         "completion_tokens": result.token_usage.completion_tokens,
         "total_tokens": result.token_usage.total_tokens,
@@ -138,6 +153,16 @@ def write_run_output(
 
     per_domain_duration = {r.domain: r.processing_time_s for r in results}
 
+    # Trigger event agentic telemetry
+    trigger_events_found = sum(
+        1 for r in results if r.intel and r.intel.trigger_event and r.intel.trigger_event.found
+    )
+    trigger_stage_timeouts = sum(1 for r in results if r.trigger_event_status == "timeout")
+    trigger_durations = [r.timings.trigger_s for r in results if r.timings.trigger_s > 0]
+    avg_trigger_duration = (
+        round(sum(trigger_durations) / len(trigger_durations), 2) if trigger_durations else 0.0
+    )
+
     manifest = RunManifest(
         run_id=run_id,
         git_commit_hash=_get_git_commit(),
@@ -154,6 +179,9 @@ def write_run_output(
         total_tokens=total_tokens,
         total_cost_usd=round(total_cost, 4),
         avg_confidence_score=avg_confidence,
+        trigger_events_found=trigger_events_found,
+        avg_trigger_stage_duration_s=avg_trigger_duration,
+        trigger_stage_timeouts=trigger_stage_timeouts,
     )
 
     manifest_path = runs_dir / f"manifest_{run_id}.json"
