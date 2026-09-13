@@ -86,7 +86,4 @@ def print_cost_report(results: list[DomainResult]) -> None:
 
     console.print()
     console.print(table)
-    console.print(
-        "[dim]tokens: prompt/completion/total · pricing: $0.59/$0.79 per 1M[/dim]\n"
-    )
-
+    console.print("[dim]tokens: prompt/completion/total · pricing: $0.59/$0.79 per 1M[/dim]\n")

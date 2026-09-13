@@ -208,9 +208,7 @@ async def _lookup_founders_external(domain: str, settings: Settings, client) -> 
 
         valid_leaders = []
         for m in response.leaders:
-            if m.linkedin_url and _is_matching_linkedin_profile(
-                m.name, m.role, m.linkedin_url
-            ):
+            if m.linkedin_url and _is_matching_linkedin_profile(m.name, m.role, m.linkedin_url):
                 valid_leaders.append(m)
         return valid_leaders[:2]
 
@@ -262,9 +260,7 @@ async def enrich_linkedin_urls(
     members_needing_urls = [
         m
         for m in intel.key_team_members
-        if not m.linkedin_url
-        and m.name
-        and any(kw in (m.role or "").lower() for kw in exec_roles)
+        if not m.linkedin_url and m.name and any(kw in (m.role or "").lower() for kw in exec_roles)
     ]
     if members_needing_urls:
         target_members = members_needing_urls[:2]
@@ -309,10 +305,7 @@ async def enrich_linkedin_urls(
     intel.key_team_members = [m for m in intel.key_team_members if m.role != "__DROP__"]
 
     # 3. External founder lookup if no executive leadership is present
-    has_exec = any(
-        EXEC_ROLE_PATTERN.search(m.role or "")
-        for m in intel.key_team_members
-    )
+    has_exec = any(EXEC_ROLE_PATTERN.search(m.role or "") for m in intel.key_team_members)
     if not intel.key_team_members or not has_exec:
         external_leaders = await _lookup_founders_external(domain, settings, client)
         if external_leaders:

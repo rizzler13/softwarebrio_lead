@@ -379,6 +379,7 @@ async def discover_urls(domain: str, settings: Settings, browser=None) -> list[s
         try:
             import os
             import sys
+
             os.set_blocking(sys.stdout.fileno(), True)
             os.set_blocking(sys.stderr.fileno(), True)
         except Exception:

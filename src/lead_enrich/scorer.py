@@ -48,9 +48,7 @@ def _check_signals(intel: CompanyIntel) -> float:
     # 3. Valid Contact Emails (max 0.15)
     if intel.contact_emails:
         dummy_markers = ["example.com", "bad_actor"]
-        has_dummy = any(
-            any(m in email for m in dummy_markers) for email in intel.contact_emails
-        )
+        has_dummy = any(any(m in email for m in dummy_markers) for email in intel.contact_emails)
         if not has_dummy:
             score += 0.15
         else:

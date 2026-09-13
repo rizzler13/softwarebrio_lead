@@ -62,9 +62,7 @@ class _LLMCompanyIntel(BaseModel):
     company_overview: str = Field(
         "", description="Concise 1-2 sentence summary of what the company does and why notable."
     )
-    target_audience: str = Field(
-        "", description="Primary target customer and user personas."
-    )
+    target_audience: str = Field("", description="Primary target customer and user personas.")
     contact_emails: list[str] = Field(
         default_factory=list, description="Generic contact emails found on the page."
     )
