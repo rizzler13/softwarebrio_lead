@@ -31,3 +31,6 @@ htmlcov/
 
 # Ruff
 .ruff_cache/
+
+# Local reference docs
+ENGINEERING_LOG.md
