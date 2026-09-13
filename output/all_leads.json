@@ -286,8 +286,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Notion provides an AI-powered all-in-one workspace that combines notes, docs, databases, and workflow automation, helping teams collaborate faster and automate busywork.",
-      "target_audience": "Businesses and teams of all sizes looking for an integrated workspace to streamline collaboration, documentation, and automation.",
+      "company_overview": "Notion provides an AI-native, all-in-one workspace that combines notes, docs, databases, and automation to help teams collaborate and get work done faster.",
+      "target_audience": "Teams and organizations looking for a unified, AI-powered workspace to streamline collaboration and productivity.",
       "contact_emails": [
         "team@makenotion.com"
       ],
@@ -302,18 +302,18 @@
     },
     "token_usage": {
       "prompt_tokens": 660,
-      "completion_tokens": 475,
-      "total_tokens": 1135,
-      "estimated_cost_usd": 0.000765
+      "completion_tokens": 358,
+      "total_tokens": 1018,
+      "estimated_cost_usd": 0.000672
     },
     "timings": {
-      "fetch_s": 7.08,
-      "preprocess_s": 0.007,
-      "llm_s": 2.68,
-      "enrich_s": 3.51,
-      "total_s": 13.28
+      "fetch_s": 6.2,
+      "preprocess_s": 0.002,
+      "llm_s": 1.54,
+      "enrich_s": 1.12,
+      "total_s": 8.86
     },
-    "processing_time_s": 13.28,
+    "processing_time_s": 8.86,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://notion.com",
@@ -326,8 +326,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Stripe is a financial services platform that helps businesses of all sizes accept payments, build flexible billing models, and manage money movement.",
-      "target_audience": "Businesses of all sizes, from solo founders to large enterprises, that need payment processing and financial infrastructure.",
+      "company_overview": "Stripe is a technology company that offers programmable financial infrastructure, enabling businesses to accept payments, manage billing, and handle money movement globally.",
+      "target_audience": "Businesses of all sizes, from solo founders to large enterprises, that need payment processing, billing, and financial services.",
       "contact_emails": [],
       "key_team_members": [
         {
@@ -336,27 +336,32 @@
           "linkedin_url": "https://www.linkedin.com/in/william-gaybrick-5730347"
         },
         {
-          "name": "Maureen Aguilar",
-          "role": "Co-Founder at Stripe",
-          "linkedin_url": "https://www.linkedin.com/in/maureen-aguilar-a6609b24a"
+          "name": "Patrick Collison",
+          "role": "Stripe CEO",
+          "linkedin_url": "https://www.linkedin.com/in/patrickcollison"
+        },
+        {
+          "name": "Chris Conley",
+          "role": "Engineer and founder",
+          "linkedin_url": "https://www.linkedin.com/in/chrismconley"
         }
       ],
-      "confidence_score": 0.81
+      "confidence_score": 0.86
     },
     "token_usage": {
       "prompt_tokens": 659,
-      "completion_tokens": 278,
-      "total_tokens": 937,
-      "estimated_cost_usd": 0.000608
+      "completion_tokens": 250,
+      "total_tokens": 909,
+      "estimated_cost_usd": 0.000586
     },
     "timings": {
-      "fetch_s": 4.39,
-      "preprocess_s": 0.004,
-      "llm_s": 1.35,
-      "enrich_s": 1.07,
-      "total_s": 6.81
+      "fetch_s": 6.65,
+      "preprocess_s": 0.003,
+      "llm_s": 1.34,
+      "enrich_s": 2.78,
+      "total_s": 10.78
     },
-    "processing_time_s": 6.81,
+    "processing_time_s": 10.78,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://stripe.com",
@@ -369,8 +374,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Linear offers a purpose-built product development platform that enables teams and AI agents to plan, coordinate, and build software products efficiently.",
-      "target_audience": "Product teams, developers, and product managers building software in the AI era.",
+      "company_overview": "Linear offers a purpose-built product development platform that integrates AI agents to help software teams plan, coordinate, and build products more efficiently.",
+      "target_audience": "Product managers, engineers, and software development teams looking for AI‑enhanced planning and collaboration tools.",
       "contact_emails": [
         "hello@linear.app"
       ],
@@ -385,18 +390,18 @@
     },
     "token_usage": {
       "prompt_tokens": 660,
-      "completion_tokens": 285,
-      "total_tokens": 945,
-      "estimated_cost_usd": 0.000615
+      "completion_tokens": 299,
+      "total_tokens": 959,
+      "estimated_cost_usd": 0.000626
     },
     "timings": {
-      "fetch_s": 3.04,
-      "preprocess_s": 0.03,
-      "llm_s": 2.81,
-      "enrich_s": 5.38,
-      "total_s": 11.26
+      "fetch_s": 2.27,
+      "preprocess_s": 0.022,
+      "llm_s": 2.21,
+      "enrich_s": 2.46,
+      "total_s": 6.96
     },
-    "processing_time_s": 11.26,
+    "processing_time_s": 6.96,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://linear.app",
@@ -409,8 +414,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Railway provides an all-in-one intelligent cloud platform that simplifies deploying web apps, servers, databases, and other services with automatic scaling, monitoring, and security.",
-      "target_audience": "Software developers, development teams, and startups looking for streamlined cloud deployment and infrastructure management.",
+      "company_overview": "Railway is an all-in-one intelligent cloud platform that lets developers deploy web apps, servers, databases, and more with automatic scaling, monitoring, and security.",
+      "target_audience": "Developers and software teams building web applications, SaaS products, and startups seeking a streamlined cloud deployment solution.",
       "contact_emails": [
         "bugbounty@railway.com",
         "privacy@railway.com",
@@ -421,18 +426,18 @@
     },
     "token_usage": {
       "prompt_tokens": 655,
-      "completion_tokens": 250,
-      "total_tokens": 905,
-      "estimated_cost_usd": 0.000584
+      "completion_tokens": 304,
+      "total_tokens": 959,
+      "estimated_cost_usd": 0.000627
     },
     "timings": {
-      "fetch_s": 7.22,
-      "preprocess_s": 0.004,
-      "llm_s": 1.32,
-      "enrich_s": 3.63,
-      "total_s": 12.17
+      "fetch_s": 8.62,
+      "preprocess_s": 0.005,
+      "llm_s": 1.47,
+      "enrich_s": 3.7,
+      "total_s": 13.8
     },
-    "processing_time_s": 12.17,
+    "processing_time_s": 13.8,
     "pages_fetched": 2,
     "urls_discovered": [
       "https://railway.app",
@@ -445,8 +450,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Resend provides a modern email sending platform that enables developers to deliver transactional and marketing emails at scale, focusing on reaching inboxes rather than spam folders.",
-      "target_audience": "Developers and product teams building applications who need to send transactional and marketing emails, as well as companies of all sizes requiring reliable email delivery.",
+      "company_overview": "Resend offers a modern email sending platform that lets developers deliver transactional and marketing emails at scale, helping messages reach inboxes instead of spam folders.",
+      "target_audience": "Developers and product teams building applications that need reliable transactional and marketing email delivery, including startups and enterprise businesses.",
       "contact_emails": [
         "bu@resend.com",
         "delivered@resend.dev",
@@ -472,18 +477,18 @@
     },
     "token_usage": {
       "prompt_tokens": 653,
-      "completion_tokens": 414,
-      "total_tokens": 1067,
-      "estimated_cost_usd": 0.000712
+      "completion_tokens": 346,
+      "total_tokens": 999,
+      "estimated_cost_usd": 0.000659
     },
     "timings": {
-      "fetch_s": 8.99,
-      "preprocess_s": 0.006,
-      "llm_s": 2.15,
-      "enrich_s": 0.91,
-      "total_s": 12.04
+      "fetch_s": 3.57,
+      "preprocess_s": 0.01,
+      "llm_s": 1.52,
+      "enrich_s": 0.87,
+      "total_s": 5.97
     },
-    "processing_time_s": 12.04,
+    "processing_time_s": 5.97,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://resend.com",
@@ -496,8 +501,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Airtable is a no‑code collaboration platform that lets teams build AI‑powered, customizable workflows and apps to manage data and automate tasks without technical expertise.",
-      "target_audience": "Teams and organizations of all sizes seeking a flexible, no‑code solution for data management, workflow automation, and collaborative app building.",
+      "company_overview": "Airtable provides a no-code, collaborative platform that lets teams build custom workflows, databases, and apps to streamline processes and automate tasks.",
+      "target_audience": "Teams and organizations across industries seeking flexible, low‑code solutions for data management, collaboration, and workflow automation.",
       "contact_emails": [
         "security@airtable.com"
       ],
@@ -512,18 +517,18 @@
     },
     "token_usage": {
       "prompt_tokens": 660,
-      "completion_tokens": 134,
-      "total_tokens": 794,
-      "estimated_cost_usd": 0.000495
+      "completion_tokens": 163,
+      "total_tokens": 823,
+      "estimated_cost_usd": 0.000518
     },
     "timings": {
-      "fetch_s": 3.81,
+      "fetch_s": 3.22,
       "preprocess_s": 0.002,
-      "llm_s": 1.06,
-      "enrich_s": 1.18,
-      "total_s": 6.06
+      "llm_s": 1.11,
+      "enrich_s": 2.63,
+      "total_s": 6.97
     },
-    "processing_time_s": 6.06,
+    "processing_time_s": 6.97,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://airtable.com",
@@ -536,15 +541,15 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Retool provides a unified platform for building, deploying, and managing internal tools that connect to any database, API, or LLM, enabling businesses to create mission‑critical applications quickly.",
-      "target_audience": "Enterprises and growing companies that need internal tools and custom applications for operations, engineering, product, and other business teams.",
+      "company_overview": "Retool provides a unified platform to quickly build, deploy, and manage internal tools by connecting to any database, API, or LLM, enabling businesses to create production‑ready apps with built‑in security and governance.",
+      "target_audience": "Enterprises and mid‑market companies that need internal applications for operations, data analysis, and workflow automation—typically product, engineering, and ops teams building custom internal tools.",
       "contact_emails": [
         "support@retool.com"
       ],
       "key_team_members": [
         {
           "name": "David Hsu",
-          "role": "CEO",
+          "role": "Founder, CEO @ Retool",
           "linkedin_url": "https://www.linkedin.com/in/dvdhsu"
         }
       ],
@@ -552,18 +557,18 @@
     },
     "token_usage": {
       "prompt_tokens": 658,
-      "completion_tokens": 228,
-      "total_tokens": 886,
-      "estimated_cost_usd": 0.000568
+      "completion_tokens": 302,
+      "total_tokens": 960,
+      "estimated_cost_usd": 0.000627
     },
     "timings": {
-      "fetch_s": 2.27,
-      "preprocess_s": 0.004,
-      "llm_s": 1.26,
-      "enrich_s": 2.65,
-      "total_s": 6.19
+      "fetch_s": 2.94,
+      "preprocess_s": 0.002,
+      "llm_s": 1.62,
+      "enrich_s": 1.98,
+      "total_s": 6.54
     },
-    "processing_time_s": 6.19,
+    "processing_time_s": 6.54,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://retool.com",
@@ -576,8 +581,8 @@
     "status": "success",
     "error_reason": "",
     "intel": {
-      "company_overview": "Clerk builds authentication, user management, and billing solutions for modern web applications, offering prebuilt UI components and a developer-focused experience.",
-      "target_audience": "Developers and product teams building modern web apps with frameworks like React, Next.js, and Remix who need authentication and user management.",
+      "company_overview": "Clerk provides authentication, user management, and billing solutions for modern web applications, offering drop‑in UI components and a developer‑focused experience.",
+      "target_audience": "Developers building modern web applications (e.g., React, Next.js, Remix) who need authentication, user management, and billing functionality.",
       "contact_emails": [
         "sales@clerk.dev",
         "support@clerk.com"
@@ -593,18 +598,18 @@
     },
     "token_usage": {
       "prompt_tokens": 652,
-      "completion_tokens": 233,
-      "total_tokens": 885,
-      "estimated_cost_usd": 0.000569
+      "completion_tokens": 287,
+      "total_tokens": 939,
+      "estimated_cost_usd": 0.000611
     },
     "timings": {
-      "fetch_s": 2.2,
-      "preprocess_s": 0.004,
-      "llm_s": 1.3,
-      "enrich_s": 2.58,
-      "total_s": 6.07
+      "fetch_s": 2.28,
+      "preprocess_s": 0.006,
+      "llm_s": 1.7,
+      "enrich_s": 0.87,
+      "total_s": 4.86
     },
-    "processing_time_s": 6.07,
+    "processing_time_s": 4.86,
     "pages_fetched": 3,
     "urls_discovered": [
       "https://clerk.com",
@@ -624,13 +629,13 @@
       "estimated_cost_usd": 0.0
     },
     "timings": {
-      "fetch_s": 0.35,
+      "fetch_s": 0.3,
       "preprocess_s": 0.0,
       "llm_s": 0.0,
       "enrich_s": 0.0,
-      "total_s": 0.35
+      "total_s": 0.3
     },
-    "processing_time_s": 0.35,
+    "processing_time_s": 0.3,
     "pages_fetched": 0,
     "urls_discovered": [
       "https://thisdomaindoesnotexist12345.com",
@@ -650,13 +655,13 @@
       "estimated_cost_usd": 0.0
     },
     "timings": {
-      "fetch_s": 16.24,
+      "fetch_s": 16.23,
       "preprocess_s": 0.0,
       "llm_s": 0.0,
       "enrich_s": 0.0,
-      "total_s": 16.24
+      "total_s": 16.23
     },
-    "processing_time_s": 16.24,
+    "processing_time_s": 16.23,
     "pages_fetched": 0,
     "urls_discovered": [
       "https://httpstat.us",
