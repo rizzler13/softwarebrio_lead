@@ -1,0 +1,702 @@
+[
+  {
+    "domain": "arize.com",
+    "status": "failed",
+    "error_reason": "Hard timeout (45s)",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 0.0,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 0.0
+    },
+    "processing_time_s": 0.0,
+    "pages_fetched": 0,
+    "urls_discovered": []
+  },
+  {
+    "domain": "google.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Google is a technology company that develops a broad range of AI products and services, including the Gemini family of large language models, Search, Workspace, Cloud, and Developer platforms. Its latest Gemini 3.8 Flash and 3.8 Flash Cyber models are positioned to deliver next-generation intelligence for agentic workflows and cybersecurity.",
+      "target_audience": "Consumers seeking AI-powered search and productivity assistants; businesses using Google Ads, Cloud, and Workspace; developers, researchers, and startups building on Google AI, DeepMind, and developer tooling (e.g., agentic workflows and cybersecurity).",
+      "contact_emails": [
+        "press@google.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Sundar Pichai",
+          "role": "CEO, Google & Alphabet",
+          "linkedin_url": "https://www.linkedin.com/in/sundarpichai"
+        },
+        {
+          "name": "Thomas Kurian",
+          "role": "CEO, Google Cloud",
+          "linkedin_url": "https://www.linkedin.com/in/thomas-kurian-469b6219"
+        }
+      ],
+      "confidence_score": 0.82
+    },
+    "token_usage": {
+      "prompt_tokens": 2106,
+      "completion_tokens": 200,
+      "total_tokens": 2306,
+      "estimated_cost_usd": 0.001401
+    },
+    "timings": {
+      "fetch_s": 4.64,
+      "preprocess_s": 0.006,
+      "llm_s": 3.69,
+      "enrich_s": 7.98,
+      "total_s": 16.32
+    },
+    "processing_time_s": 16.32,
+    "pages_fetched": 4,
+    "urls_discovered": [
+      "https://google.com",
+      "https://google.com/about",
+      "https://google.com/team",
+      "https://google.com/company",
+      "https://google.com/contact"
+    ]
+  },
+  {
+    "domain": "facebook.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Meta (formerly Facebook) is a social technology company that operates social media platforms like Facebook, Instagram, and Threads, as well as hardware products including Meta Quest VR headsets and Ray-Ban Meta AI glasses. The company is notable for its focus on advancing artificial intelligence, virtual/mixed reality technologies, and its mission to build the future of human connection.",
+      "target_audience": "General consumers worldwide seeking social connection, entertainment, and mixed reality experiences; plus advertising partners and developers building on Meta's platforms.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Eduardo Saverin",
+          "role": "Co-Founder",
+          "linkedin_url": "https://sg.linkedin.com/in/saverin"
+        },
+        {
+          "name": "Mark Zuckerberg",
+          "role": "CEO",
+          "linkedin_url": "https://www.linkedin.com/in/mark-zuckerberg-618bba58"
+        }
+      ],
+      "confidence_score": 0.68
+    },
+    "token_usage": {
+      "prompt_tokens": 1525,
+      "completion_tokens": 178,
+      "total_tokens": 1703,
+      "estimated_cost_usd": 0.00104
+    },
+    "timings": {
+      "fetch_s": 9.14,
+      "preprocess_s": 0.002,
+      "llm_s": 20.25,
+      "enrich_s": 8.58,
+      "total_s": 37.97
+    },
+    "processing_time_s": 37.97,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://facebook.com",
+      "https://facebook.com/about",
+      "https://facebook.com/careers"
+    ]
+  },
+  {
+    "domain": "postman.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Postman is an AI-native API platform for engineers and enterprises to design, build, test, manage, and distribute APIs and services across the full API lifecycle. It is widely adopted as the platform where the world's APIs are built and shipped, now integrating native AI capabilities such as an AI Engineer, Agent Mode, and MCP servers to automate API workflows and accelerate development at scale.",
+      "target_audience": "Software engineers, development teams, and enterprises building, testing, and managing APIs and AI-powered services at scale.",
+      "contact_emails": [
+        "help@postman.com",
+        "info-jp@postman.com",
+        "info@postman.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Subhajit Paul",
+          "role": "Driving API-First Productivity at Scale",
+          "linkedin_url": "https://www.linkedin.com/in/subhajit-paul-182393122"
+        },
+        {
+          "name": "Abhinav Asthana",
+          "role": "CEO and Founder at Postman",
+          "linkedin_url": "https://www.linkedin.com/in/abhinavasthana"
+        },
+        {
+          "name": "Ankit Sobti",
+          "role": "Co-Founder, Postman",
+          "linkedin_url": "https://www.linkedin.com/in/ankit-sobti"
+        }
+      ],
+      "confidence_score": 0.83
+    },
+    "token_usage": {
+      "prompt_tokens": 1882,
+      "completion_tokens": 187,
+      "total_tokens": 2069,
+      "estimated_cost_usd": 0.001258
+    },
+    "timings": {
+      "fetch_s": 6.48,
+      "preprocess_s": 0.003,
+      "llm_s": 1.35,
+      "enrich_s": 0.83,
+      "total_s": 8.66
+    },
+    "processing_time_s": 8.66,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://postman.com",
+      "https://postman.com/company/about-postman",
+      "https://postman.com/company/contact-sales"
+    ]
+  },
+  {
+    "domain": "supabase.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Supabase provides a complete, open-source backend platform built around Postgres, bundling authentication, real-time data, storage, edge functions, and vector embeddings into a single developer service. It differentiates itself by offering an integrated dashboard and ready-made starter templates that let developers ship production applications quickly without managing multiple infrastructure components.",
+      "target_audience": "Developers building full-stack web and mobile applications (React, Next.js, Flutter, React Native) who need a scalable Postgres-powered backend with authentication, storage, and AI/vector capabilities.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Ant Wilson",
+          "role": "Co-Founder & CTO at Supabase",
+          "linkedin_url": "https://uk.linkedin.com/in/ant-wilson-46179937"
+        },
+        {
+          "name": "Greg Kress, Ph.D.",
+          "role": "Supabase",
+          "linkedin_url": "https://www.linkedin.com/in/gregorykress"
+        },
+        {
+          "name": "Paul Copplestone",
+          "role": "CEO @ supabase.com. Go to ...",
+          "linkedin_url": "https://www.linkedin.com/in/paulcopplestone"
+        }
+      ],
+      "confidence_score": 0.74
+    },
+    "token_usage": {
+      "prompt_tokens": 1929,
+      "completion_tokens": 185,
+      "total_tokens": 2114,
+      "estimated_cost_usd": 0.001284
+    },
+    "timings": {
+      "fetch_s": 4.48,
+      "preprocess_s": 0.007,
+      "llm_s": 1.45,
+      "enrich_s": 0.84,
+      "total_s": 6.78
+    },
+    "processing_time_s": 6.78,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://supabase.com",
+      "https://supabase.com/solutions/innovation-teams",
+      "https://supabase.com/company"
+    ]
+  },
+  {
+    "domain": "vapi.ai",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Vapi is a developer platform for building, testing, and deploying advanced voice AI agents with features including orchestration, real-time monitoring, and enterprise-grade scalability. The platform handles the underlying infrastructure, allowing developers to go from prompt to production quickly while offering compliance certifications (SOC 2, HIPAA, PCI), sub-500ms latency, and reach to 1M+ developers globally.",
+      "target_audience": "Developers and enterprises building conversational voice AI applications for use cases like customer support, lead qualification, appointment scheduling, and healthcare operations.",
+      "contact_emails": [
+        "talent@vapi.ai"
+      ],
+      "key_team_members": [
+        {
+          "name": "Jason Mitura",
+          "role": "VP of Software Development, Ring (Vapi customer)",
+          "linkedin_url": "https://www.linkedin.com/in/josh-sekuler"
+        },
+        {
+          "name": "Alejandro Maza",
+          "role": "Chief Product & AI Officer, Kavak (Vapi customer)",
+          "linkedin_url": "https://mx.linkedin.com/in/mazaalejandro/en"
+        },
+        {
+          "name": "Jordan D.",
+          "role": "Founder, CEO @ Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/jordandearsley"
+        },
+        {
+          "name": "Rajdeep Ghosh",
+          "role": "Co-Founder & CTO at June Labs",
+          "linkedin_url": "https://in.linkedin.com/in/rumbleftw"
+        },
+        {
+          "name": "Michael Collins",
+          "role": "Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/michael-collins-k8t3"
+        }
+      ],
+      "confidence_score": 0.83
+    },
+    "token_usage": {
+      "prompt_tokens": 1943,
+      "completion_tokens": 242,
+      "total_tokens": 2185,
+      "estimated_cost_usd": 0.001338
+    },
+    "timings": {
+      "fetch_s": 3.07,
+      "preprocess_s": 0.007,
+      "llm_s": 2.83,
+      "enrich_s": 5.06,
+      "total_s": 10.96
+    },
+    "processing_time_s": 10.96,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://vapi.ai",
+      "https://vapi.ai/pricing",
+      "https://vapi.ai/careers"
+    ]
+  },
+  {
+    "domain": "notion.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 16.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 16.39
+    },
+    "processing_time_s": 16.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://notion.com",
+      "https://notion.com/about",
+      "https://notion.com/teams",
+      "https://notion.com/contact-sales"
+    ]
+  },
+  {
+    "domain": "stripe.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 12.43,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 12.43
+    },
+    "processing_time_s": 12.43,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://stripe.com",
+      "https://stripe.com/in/about",
+      "https://stripe.com/in/contact/sales",
+      "https://stripe.com/in/pricing"
+    ]
+  },
+  {
+    "domain": "linear.app",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Linear is a product development platform that helps teams manage issues, projects, and product strategy through features like team-based initiatives. It differentiates itself with enterprise-grade security features such as Okta-managed identity verification for its MCP integration and private team visibility for sensitive planning work.",
+      "target_audience": "Product development teams and engineering organizations, ranging from startups to enterprises, who need to manage product strategy, issues, and projects.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Karri Saarinen",
+          "role": "Co-Founder, CEO",
+          "linkedin_url": "https://www.linkedin.com/in/karrisaarinen"
+        },
+        {
+          "name": "Tuomas Artman",
+          "role": "Co-Founder",
+          "linkedin_url": "https://es.linkedin.com/in/tuomasartman"
+        },
+        {
+          "name": "Jori Lallo",
+          "role": "Co-Founder",
+          "linkedin_url": "https://www.linkedin.com/in/jorilallo"
+        }
+      ],
+      "confidence_score": 0.68
+    },
+    "token_usage": {
+      "prompt_tokens": 1311,
+      "completion_tokens": 161,
+      "total_tokens": 1472,
+      "estimated_cost_usd": 0.000901
+    },
+    "timings": {
+      "fetch_s": 16.41,
+      "preprocess_s": 0.001,
+      "llm_s": 1.15,
+      "enrich_s": 10.75,
+      "total_s": 28.32
+    },
+    "processing_time_s": 28.32,
+    "pages_fetched": 1,
+    "urls_discovered": [
+      "https://linear.app",
+      "https://linear.app/changelog/2026-08-13-team-initiatives",
+      "https://linear.app/about",
+      "https://linear.app/contact"
+    ]
+  },
+  {
+    "domain": "railway.app",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 16.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 16.39
+    },
+    "processing_time_s": 16.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://railway.app",
+      "https://railway.app/about",
+      "https://railway.app/team",
+      "https://railway.app/company",
+      "https://railway.app/contact"
+    ]
+  },
+  {
+    "domain": "resend.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Resend is an email infrastructure platform that enables developers to deliver transactional and marketing emails at scale through a developer-first API, SDKs, and a React-based visual editor. Notable for its \"developer experience\" focus, it powers email templates via the open-source react-email library and is trusted by companies of all sizes for high-deliverability email sending.",
+      "target_audience": "Software developers and engineering teams building applications that require transactional, onboarding, or marketing email delivery; also marketing teams managing newsletters and campaigns.",
+      "contact_emails": [
+        "bu@resend.com",
+        "delivered@resend.dev",
+        "jonni@resend.com",
+        "onboarding@resend.dev",
+        "support@resend.com",
+        "your.name@acme.com",
+        "zeh@resend.com",
+        "zeno@resend.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Bu Kinoshita",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://br.linkedin.com/in/bkinoshita"
+        },
+        {
+          "name": "Jonni Lundy",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://www.linkedin.com/in/jonnilundy"
+        },
+        {
+          "name": "Erin Zidelis",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://www.linkedin.com/in/erinklevine"
+        }
+      ],
+      "confidence_score": 0.86
+    },
+    "token_usage": {
+      "prompt_tokens": 2468,
+      "completion_tokens": 189,
+      "total_tokens": 2657,
+      "estimated_cost_usd": 0.001605
+    },
+    "timings": {
+      "fetch_s": 6.34,
+      "preprocess_s": 0.004,
+      "llm_s": 2.79,
+      "enrich_s": 2.91,
+      "total_s": 12.05
+    },
+    "processing_time_s": 12.05,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://resend.com",
+      "https://resend.com/about",
+      "https://resend.com/pricing"
+    ]
+  },
+  {
+    "domain": "airtable.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 12.44,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 12.44
+    },
+    "processing_time_s": 12.44,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://airtable.com",
+      "https://airtable.com/about",
+      "https://airtable.com/company/trust-and-security",
+      "https://airtable.com/company/privacy"
+    ]
+  },
+  {
+    "domain": "retool.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Retool provides a unified platform for building, deploying, and managing internal business applications that connect to any database, API, or LLM. What sets them apart is their production-grade approach to internal tools—offering AI-powered app generation (AppGen), governance built-in by default (RBAC, audit logs), and an AI agent system that doesn't just display data but acts on it through autonomous workflows and write-back capabilities.",
+      "target_audience": "Data teams, engineering teams, operations teams, financial services, manufacturing, enterprise, and startups looking to build production-ready internal tools without being bottlenecked by engineering resources.",
+      "contact_emails": [
+        "support@retool.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Sam Garfield",
+          "role": "Author (likely blog/product content)",
+          "linkedin_url": "https://www.linkedin.com/in/samuelholdengarfield"
+        },
+        {
+          "name": "David Huie",
+          "role": "Co-Founder & CEO",
+          "linkedin_url": "https://www.linkedin.com/in/daviddd"
+        },
+        {
+          "name": "Chris Pires",
+          "role": "Co-Founder & CTO",
+          "linkedin_url": "https://www.linkedin.com/in/chris-pires-7301b360"
+        },
+        {
+          "name": "Jason Dent",
+          "role": "Chief Legal Officer",
+          "linkedin_url": "https://www.linkedin.com/in/jadent"
+        }
+      ],
+      "confidence_score": 0.86
+    },
+    "token_usage": {
+      "prompt_tokens": 2307,
+      "completion_tokens": 229,
+      "total_tokens": 2536,
+      "estimated_cost_usd": 0.001542
+    },
+    "timings": {
+      "fetch_s": 16.33,
+      "preprocess_s": 0.01,
+      "llm_s": 1.47,
+      "enrich_s": 6.44,
+      "total_s": 24.25
+    },
+    "processing_time_s": 24.25,
+    "pages_fetched": 2,
+    "urls_discovered": [
+      "https://retool.com",
+      "https://retool.com/for/data-teams",
+      "https://retool.com/for/engineering-teams",
+      "https://retool.com/for/operations-teams"
+    ]
+  },
+  {
+    "domain": "clerk.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Clerk provides authentication, user management, multi-tenancy, and billing components purpose-built for modern web frameworks like React, Next.js, and Remix. Notable for its developer-first UX (drop-in components and an AI-agent-focused CLI), SOC 2 Type 2 / CCPA compliance, and a recent $50M Series C backed by industry leaders like Vercel, Stripe, and Supabase.",
+      "target_audience": "Developers and engineering teams building modern web and mobile applications (React, Next.js, Remix, Expo) who need production-ready authentication, user/organization management, and subscription billing without building it in-house.",
+      "contact_emails": [
+        "another.bad.actor@example.com",
+        "bad_actor+1@example.com",
+        "bad_actor+2@example.com",
+        "bad_actor+3@example.com",
+        "chris.walker@example.com",
+        "chris94@example.com",
+        "cwalker@example.com",
+        "sales@clerk.dev",
+        "support@clerk.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Guillermo Rauch",
+          "role": "CEO, Vercel (customer)",
+          "linkedin_url": "https://www.linkedin.com/in/kevinrose"
+        }
+      ],
+      "confidence_score": 0.83
+    },
+    "token_usage": {
+      "prompt_tokens": 2807,
+      "completion_tokens": 244,
+      "total_tokens": 3051,
+      "estimated_cost_usd": 0.001849
+    },
+    "timings": {
+      "fetch_s": 12.44,
+      "preprocess_s": 0.054,
+      "llm_s": 3.65,
+      "enrich_s": 1.97,
+      "total_s": 18.11
+    },
+    "processing_time_s": 18.11,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://clerk.com",
+      "https://clerk.com/company",
+      "https://clerk.com/contact",
+      "https://clerk.com/pricing"
+    ]
+  },
+  {
+    "domain": "thisdomaindoesnotexist12345.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 10.53,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 10.7
+    },
+    "processing_time_s": 10.7,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://thisdomaindoesnotexist12345.com",
+      "https://thisdomaindoesnotexist12345.com/about",
+      "https://thisdomaindoesnotexist12345.com/team",
+      "https://thisdomaindoesnotexist12345.com/company",
+      "https://thisdomaindoesnotexist12345.com/contact"
+    ]
+  },
+  {
+    "domain": "httpstat.us",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 18.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 18.39
+    },
+    "processing_time_s": 18.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://httpstat.us",
+      "https://httpstat.us/about",
+      "https://httpstat.us/team",
+      "https://httpstat.us/company",
+      "https://httpstat.us/contact"
+    ]
+  },
+  {
+    "domain": "sentry.io",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Sentry is an error monitoring and performance monitoring platform that helps developers and software teams identify, debug, and fix code issues in real time, with connected logs, replays, and AI-assisted debugging. It stands out for its developer-first approach—minimal five-line SDK setup, a single unified trace across all signals, and AI features like Seer that auto-generate merge-ready patches and review code.",
+      "target_audience": "Developers and software engineering teams building applications across web, mobile, and backend platforms (Next.js, React, Python, Node.js, .NET, Swift, etc.)",
+      "contact_emails": [
+        "examplepublickey@o0.ingest.sentry.io",
+        "media@sentry.io",
+        "support@sentry.io"
+      ],
+      "key_team_members": [
+        {
+          "name": "David Cramer",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://www.linkedin.com/in/dmcramer"
+        },
+        {
+          "name": "Brian Baker",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://www.linkedin.com/in/briantbaker1963"
+        },
+        {
+          "name": "David A. King",
+          "role": "Executive / Founder",
+          "linkedin_url": "https://www.linkedin.com/in/davidalanking"
+        }
+      ],
+      "confidence_score": 0.9
+    },
+    "token_usage": {
+      "prompt_tokens": 1994,
+      "completion_tokens": 203,
+      "total_tokens": 2197,
+      "estimated_cost_usd": 0.001337
+    },
+    "timings": {
+      "fetch_s": 7.79,
+      "preprocess_s": 0.005,
+      "llm_s": 10.89,
+      "enrich_s": 2.02,
+      "total_s": 20.71
+    },
+    "processing_time_s": 20.71,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://sentry.io",
+      "https://sentry.io/about",
+      "https://sentry.io/contact/enterprise"
+    ]
+  }
+]

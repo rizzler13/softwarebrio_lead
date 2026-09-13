@@ -1,0 +1,25 @@
+{
+  "run_id": "2026-09-13_13-46-53",
+  "git_commit_hash": "uncommitted",
+  "model_used": "qwen/qwen3.8-27b",
+  "domains_requested": 3,
+  "domains": [
+    "postman.com",
+    "supabase.com",
+    "vapi.ai"
+  ],
+  "success_count": 3,
+  "partial_count": 0,
+  "failed_count": 0,
+  "errors": [],
+  "total_duration_seconds": 39.3,
+  "per_domain_duration": {
+    "postman.com": 38.46,
+    "supabase.com": 27.63,
+    "vapi.ai": 13.49
+  },
+  "avg_tokens_per_domain": 2954.3,
+  "total_tokens": 8863,
+  "total_cost_usd": 0.0054,
+  "avg_confidence_score": 0.84
+}

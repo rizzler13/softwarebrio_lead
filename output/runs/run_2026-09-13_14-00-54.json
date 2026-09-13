@@ -1,0 +1,162 @@
+[
+  {
+    "domain": "postman.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Postman is an all-in-one API development platform that helps engineers develop, test, manage, and distribute APIs. The company has pivoted into an \"AI-native\" platform, introducing \"AI Engineer\" agents that automate API workflows, making it the world's leading location where APIs are built and shipped.",
+      "target_audience": "Engineers and enterprise organizations needing to build, test, manage, and scale APIs, especially those managing complex API lifecycles and integrating with AI agents.",
+      "contact_emails": [
+        "help@postman.com",
+        "info-jp@postman.com",
+        "info@postman.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Abhinav Asthana",
+          "role": "CEO and Co-founder",
+          "linkedin_url": "https://www.linkedin.com/in/sunilchaudhary"
+        },
+        {
+          "name": "Ankit Sobti",
+          "role": "Co-founder",
+          "linkedin_url": "https://www.linkedin.com/in/ankit-sobti"
+        },
+        {
+          "name": "Abhijit Kane",
+          "role": "Co-founder",
+          "linkedin_url": null
+        }
+      ],
+      "confidence_score": 0.92
+    },
+    "token_usage": {
+      "prompt_tokens": 2125,
+      "completion_tokens": 234,
+      "total_tokens": 2359,
+      "estimated_cost_usd": 0.001439
+    },
+    "timings": {
+      "fetch_s": 8.52,
+      "preprocess_s": 0.007,
+      "llm_s": 1.79,
+      "enrich_s": 2.54,
+      "total_s": 12.85
+    },
+    "processing_time_s": 12.85,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://postman.com",
+      "https://postman.com/company/about-postman",
+      "https://postman.com/company/contact-sales"
+    ]
+  },
+  {
+    "domain": "supabase.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Supabase is an open-source platform that provides a Postgres database along with Authentication, instant APIs, Realtime, Edge Functions, Storage, and Vector embeddings for building production-grade applications. It is notable for delivering a fully integrated backend-as-a-service experience, trusted by fast-growing companies for moving from rapid prototyping to scaling millions of users.",
+      "target_audience": "Developers and engineering teams building web, mobile, and AI-powered applications who want to consolidate their backend (database, auth, APIs, storage, and realtime) into a single Postgres-backed platform.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Ant Wilson",
+          "role": "Co-Founder & CTO at Supabase",
+          "linkedin_url": "https://uk.linkedin.com/in/ant-wilson-46179937"
+        },
+        {
+          "name": "Greg Kress, Ph.D.",
+          "role": "Supabase",
+          "linkedin_url": "https://www.linkedin.com/in/gregorykress"
+        },
+        {
+          "name": "Paul Copplestone",
+          "role": "CEO @ supabase.com. Go to ...",
+          "linkedin_url": "https://www.linkedin.com/in/paulcopplestone"
+        }
+      ],
+      "confidence_score": 0.7
+    },
+    "token_usage": {
+      "prompt_tokens": 2226,
+      "completion_tokens": 191,
+      "total_tokens": 2417,
+      "estimated_cost_usd": 0.001464
+    },
+    "timings": {
+      "fetch_s": 4.09,
+      "preprocess_s": 0.016,
+      "llm_s": 4.53,
+      "enrich_s": 1.02,
+      "total_s": 9.66
+    },
+    "processing_time_s": 9.66,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://supabase.com",
+      "https://supabase.com/solutions/innovation-teams",
+      "https://supabase.com/company"
+    ]
+  },
+  {
+    "domain": "vapi.ai",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Vapi is a developer platform for building, testing, and deploying advanced voice AI agents, handling orchestration, telephony, and integration infrastructure so teams can go from prompt to production quickly. It is notable for serving both developers and Fortune 100 enterprises, with sub-500ms latency, SOC 2/HIPAA/PCI compliance, and over 1 billion calls supported.",
+      "target_audience": "Developers and businesses building conversational voice AI agents for use cases such as customer support, lead qualification, appointment scheduling, and healthcare.",
+      "contact_emails": [
+        "talent@vapi.ai"
+      ],
+      "key_team_members": [
+        {
+          "name": "Jason Mitura",
+          "role": "VP of Software Development (Ring, customer)",
+          "linkedin_url": "https://www.linkedin.com/in/josh-sekuler"
+        },
+        {
+          "name": "Alejandro Maza",
+          "role": "Chief Product & AI Officer (Kavak, customer)",
+          "linkedin_url": "https://mx.linkedin.com/in/andrescontrerassilva/es"
+        },
+        {
+          "name": "Jordan D.",
+          "role": "Founder, CEO @ Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/jordandearsley"
+        },
+        {
+          "name": "Rajdeep Ghosh",
+          "role": "Co-Founder & CTO at June Labs",
+          "linkedin_url": "https://in.linkedin.com/in/rumbleftw"
+        },
+        {
+          "name": "Michael Collins",
+          "role": "Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/michael-collins-k8t3"
+        }
+      ],
+      "confidence_score": 0.82
+    },
+    "token_usage": {
+      "prompt_tokens": 2240,
+      "completion_tokens": 238,
+      "total_tokens": 2478,
+      "estimated_cost_usd": 0.00151
+    },
+    "timings": {
+      "fetch_s": 8.78,
+      "preprocess_s": 0.004,
+      "llm_s": 11.77,
+      "enrich_s": 2.98,
+      "total_s": 23.54
+    },
+    "processing_time_s": 23.54,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://vapi.ai",
+      "https://vapi.ai/pricing",
+      "https://vapi.ai/careers"
+    ]
+  }
+]

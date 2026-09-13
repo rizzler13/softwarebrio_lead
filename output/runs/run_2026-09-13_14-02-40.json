@@ -1,0 +1,172 @@
+[
+  {
+    "domain": "postman.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Postman provides an all-in-one AI-native API platform for developing, testing, managing, and distributing APIs and services. It stands out by positioning itself as the platform on which \"the world's APIs are built and shipped,\" with a strong recent push into AI agents, MCP servers, and native AI-driven workflow automation.",
+      "target_audience": "Engineers and development teams (especially in enterprises) who build, test, manage, and distribute APIs and services, increasingly with AI agents.",
+      "contact_emails": [
+        "help@postman.com",
+        "info-jp@postman.com",
+        "info@postman.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Subhajit Paul",
+          "role": "Driving API-First Productivity at Scale",
+          "linkedin_url": "https://www.linkedin.com/in/subhajit-paul-182393122"
+        },
+        {
+          "name": "Abhinav Asthana",
+          "role": "CEO and Founder at Postman",
+          "linkedin_url": "https://www.linkedin.com/in/abhinavasthana"
+        },
+        {
+          "name": "Ankit Sobti",
+          "role": "Co-Founder, Postman",
+          "linkedin_url": "https://www.linkedin.com/in/ankit-sobti"
+        }
+      ],
+      "confidence_score": 0.88
+    },
+    "token_usage": {
+      "prompt_tokens": 1882,
+      "completion_tokens": 180,
+      "total_tokens": 2062,
+      "estimated_cost_usd": 0.001253
+    },
+    "timings": {
+      "fetch_s": 6.75,
+      "preprocess_s": 0.003,
+      "llm_s": 1.34,
+      "enrich_s": 4.8,
+      "total_s": 12.9
+    },
+    "processing_time_s": 12.9,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://postman.com",
+      "https://postman.com/company/about-postman",
+      "https://postman.com/company/contact-sales"
+    ]
+  },
+  {
+    "domain": "supabase.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Supabase provides an open-source Firebase alternative that turns a Postgres database into a full application backend with built-in Authentication, Data APIs, Edge Functions, Realtime, Storage, and Vector embeddings. It is notable for being backed by trust from fast-growing companies (e.g., Lovable, eXp Realty, Rally, Chatbase) and offering production-ready starter templates across React, Next.js, Flutter, and Expo.",
+      "target_audience": "Developers and product teams building production-grade web, mobile, and AI applications who want an all-in-one Postgres-backed backend (auth, APIs, storage, realtime, vector search) without managing separate services.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Bryan Byrne",
+          "role": "Product Manager, Lovable (customer, not Supabase)",
+          "linkedin_url": null
+        },
+        {
+          "name": "Seth Siegler",
+          "role": "Chief Innovation Officer, eXp Realty (customer, not Supabase)",
+          "linkedin_url": "https://www.linkedin.com/in/sethsiegler"
+        },
+        {
+          "name": "Kris Woods",
+          "role": "CTO, Phoenix Energy (customer, not Supabase)",
+          "linkedin_url": "https://www.linkedin.com/in/kristopherwoods"
+        },
+        {
+          "name": "Yasser Elsaid",
+          "role": "Founder and CEO, Chatbase (customer, not Supabase)",
+          "linkedin_url": null
+        },
+        {
+          "name": "Thiago Peres",
+          "role": "Founder & CTO, Rally (customer, not Supabase)",
+          "linkedin_url": null
+        }
+      ],
+      "confidence_score": 0.73
+    },
+    "token_usage": {
+      "prompt_tokens": 1929,
+      "completion_tokens": 368,
+      "total_tokens": 2297,
+      "estimated_cost_usd": 0.001429
+    },
+    "timings": {
+      "fetch_s": 4.39,
+      "preprocess_s": 0.003,
+      "llm_s": 2.39,
+      "enrich_s": 3.98,
+      "total_s": 10.77
+    },
+    "processing_time_s": 10.77,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://supabase.com",
+      "https://supabase.com/solutions/innovation-teams",
+      "https://supabase.com/company"
+    ]
+  },
+  {
+    "domain": "vapi.ai",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Vapi provides an API-native platform for developers and enterprises to build, test, and deploy production-grade voice AI agents. It differentiates with sub-500ms latency, enterprise compliance (SOC 2, HIPAA, PCI), and the ability to scale to millions of calls.",
+      "target_audience": "Developers building conversational voice AI, and enterprise teams (Fortune 100, Healthcare, Automotive, Marketplace/SaaS, Staffing) that need to scale reliable voice agents with sub-500ms latency.",
+      "contact_emails": [
+        "talent@vapi.ai"
+      ],
+      "key_team_members": [
+        {
+          "name": "Jason Mitura",
+          "role": "VP of Software Development, Ring (Customer)",
+          "linkedin_url": "https://www.linkedin.com/in/josh-sekuler"
+        },
+        {
+          "name": "Alejandro Maza",
+          "role": "Chief Product & AI Officer, Kavak (Customer)",
+          "linkedin_url": "https://ae.linkedin.com/in/pabloandresparedes"
+        },
+        {
+          "name": "Jordan D.",
+          "role": "Founder, CEO @ Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/jordandearsley"
+        },
+        {
+          "name": "Rajdeep Ghosh",
+          "role": "Co-Founder & CTO at June Labs",
+          "linkedin_url": "https://in.linkedin.com/in/rumbleftw"
+        },
+        {
+          "name": "Michael Collins",
+          "role": "Vapi",
+          "linkedin_url": "https://www.linkedin.com/in/michael-collins-k8t3"
+        }
+      ],
+      "confidence_score": 0.8
+    },
+    "token_usage": {
+      "prompt_tokens": 1943,
+      "completion_tokens": 244,
+      "total_tokens": 2187,
+      "estimated_cost_usd": 0.001339
+    },
+    "timings": {
+      "fetch_s": 3.3,
+      "preprocess_s": 0.009,
+      "llm_s": 2.94,
+      "enrich_s": 1.73,
+      "total_s": 7.98
+    },
+    "processing_time_s": 7.98,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://vapi.ai",
+      "https://vapi.ai/pricing",
+      "https://vapi.ai/careers"
+    ]
+  }
+]

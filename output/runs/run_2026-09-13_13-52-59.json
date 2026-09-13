@@ -1,0 +1,343 @@
+[
+  {
+    "domain": "notion.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 16.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 16.39
+    },
+    "processing_time_s": 16.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://notion.com",
+      "https://notion.com/about",
+      "https://notion.com/teams",
+      "https://notion.com/contact-sales"
+    ]
+  },
+  {
+    "domain": "stripe.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 12.43,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 12.43
+    },
+    "processing_time_s": 12.43,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://stripe.com",
+      "https://stripe.com/in/about",
+      "https://stripe.com/in/contact/sales",
+      "https://stripe.com/in/pricing"
+    ]
+  },
+  {
+    "domain": "linear.app",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Linear is a product development platform that helps teams manage issues, projects, and product strategy through features like team-based initiatives. It differentiates itself with enterprise-grade security features such as Okta-managed identity verification for its MCP integration and private team visibility for sensitive planning work.",
+      "target_audience": "Product development teams and engineering organizations, ranging from startups to enterprises, who need to manage product strategy, issues, and projects.",
+      "contact_emails": [],
+      "key_team_members": [
+        {
+          "name": "Karri Saarinen",
+          "role": "Co-Founder, CEO",
+          "linkedin_url": "https://www.linkedin.com/in/karrisaarinen"
+        },
+        {
+          "name": "Tuomas Artman",
+          "role": "Co-Founder",
+          "linkedin_url": "https://es.linkedin.com/in/tuomasartman"
+        },
+        {
+          "name": "Jori Lallo",
+          "role": "Co-Founder",
+          "linkedin_url": "https://www.linkedin.com/in/jorilallo"
+        }
+      ],
+      "confidence_score": 0.68
+    },
+    "token_usage": {
+      "prompt_tokens": 1311,
+      "completion_tokens": 161,
+      "total_tokens": 1472,
+      "estimated_cost_usd": 0.000901
+    },
+    "timings": {
+      "fetch_s": 16.41,
+      "preprocess_s": 0.001,
+      "llm_s": 1.15,
+      "enrich_s": 10.75,
+      "total_s": 28.32
+    },
+    "processing_time_s": 28.32,
+    "pages_fetched": 1,
+    "urls_discovered": [
+      "https://linear.app",
+      "https://linear.app/changelog/2026-08-13-team-initiatives",
+      "https://linear.app/about",
+      "https://linear.app/contact"
+    ]
+  },
+  {
+    "domain": "railway.app",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 16.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 16.39
+    },
+    "processing_time_s": 16.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://railway.app",
+      "https://railway.app/about",
+      "https://railway.app/team",
+      "https://railway.app/company",
+      "https://railway.app/contact"
+    ]
+  },
+  {
+    "domain": "resend.com",
+    "status": "failed",
+    "error_reason": "Hard timeout (45s)",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 0.0,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 0.0
+    },
+    "processing_time_s": 0.0,
+    "pages_fetched": 0,
+    "urls_discovered": []
+  },
+  {
+    "domain": "airtable.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 12.44,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 12.44
+    },
+    "processing_time_s": 12.44,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://airtable.com",
+      "https://airtable.com/about",
+      "https://airtable.com/company/trust-and-security",
+      "https://airtable.com/company/privacy"
+    ]
+  },
+  {
+    "domain": "retool.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Retool provides a unified platform for building, deploying, and managing internal business applications that connect to any database, API, or LLM. What sets them apart is their production-grade approach to internal tools—offering AI-powered app generation (AppGen), governance built-in by default (RBAC, audit logs), and an AI agent system that doesn't just display data but acts on it through autonomous workflows and write-back capabilities.",
+      "target_audience": "Data teams, engineering teams, operations teams, financial services, manufacturing, enterprise, and startups looking to build production-ready internal tools without being bottlenecked by engineering resources.",
+      "contact_emails": [
+        "support@retool.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Sam Garfield",
+          "role": "Author (likely blog/product content)",
+          "linkedin_url": "https://www.linkedin.com/in/samuelholdengarfield"
+        },
+        {
+          "name": "David Huie",
+          "role": "Co-Founder & CEO",
+          "linkedin_url": "https://www.linkedin.com/in/daviddd"
+        },
+        {
+          "name": "Chris Pires",
+          "role": "Co-Founder & CTO",
+          "linkedin_url": "https://www.linkedin.com/in/chris-pires-7301b360"
+        },
+        {
+          "name": "Jason Dent",
+          "role": "Chief Legal Officer",
+          "linkedin_url": "https://www.linkedin.com/in/jadent"
+        }
+      ],
+      "confidence_score": 0.86
+    },
+    "token_usage": {
+      "prompt_tokens": 2307,
+      "completion_tokens": 229,
+      "total_tokens": 2536,
+      "estimated_cost_usd": 0.001542
+    },
+    "timings": {
+      "fetch_s": 16.33,
+      "preprocess_s": 0.01,
+      "llm_s": 1.47,
+      "enrich_s": 6.44,
+      "total_s": 24.25
+    },
+    "processing_time_s": 24.25,
+    "pages_fetched": 2,
+    "urls_discovered": [
+      "https://retool.com",
+      "https://retool.com/for/data-teams",
+      "https://retool.com/for/engineering-teams",
+      "https://retool.com/for/operations-teams"
+    ]
+  },
+  {
+    "domain": "clerk.com",
+    "status": "success",
+    "error_reason": "",
+    "intel": {
+      "company_overview": "Clerk provides authentication, user management, multi-tenancy, and billing components purpose-built for modern web frameworks like React, Next.js, and Remix. Notable for its developer-first UX (drop-in components and an AI-agent-focused CLI), SOC 2 Type 2 / CCPA compliance, and a recent $50M Series C backed by industry leaders like Vercel, Stripe, and Supabase.",
+      "target_audience": "Developers and engineering teams building modern web and mobile applications (React, Next.js, Remix, Expo) who need production-ready authentication, user/organization management, and subscription billing without building it in-house.",
+      "contact_emails": [
+        "another.bad.actor@example.com",
+        "bad_actor+1@example.com",
+        "bad_actor+2@example.com",
+        "bad_actor+3@example.com",
+        "chris.walker@example.com",
+        "chris94@example.com",
+        "cwalker@example.com",
+        "sales@clerk.dev",
+        "support@clerk.com"
+      ],
+      "key_team_members": [
+        {
+          "name": "Guillermo Rauch",
+          "role": "CEO, Vercel (customer)",
+          "linkedin_url": "https://www.linkedin.com/in/kevinrose"
+        }
+      ],
+      "confidence_score": 0.83
+    },
+    "token_usage": {
+      "prompt_tokens": 2807,
+      "completion_tokens": 244,
+      "total_tokens": 3051,
+      "estimated_cost_usd": 0.001849
+    },
+    "timings": {
+      "fetch_s": 12.44,
+      "preprocess_s": 0.054,
+      "llm_s": 3.65,
+      "enrich_s": 1.97,
+      "total_s": 18.11
+    },
+    "processing_time_s": 18.11,
+    "pages_fetched": 3,
+    "urls_discovered": [
+      "https://clerk.com",
+      "https://clerk.com/company",
+      "https://clerk.com/contact",
+      "https://clerk.com/pricing"
+    ]
+  },
+  {
+    "domain": "thisdomaindoesnotexist12345.com",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 10.53,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 10.7
+    },
+    "processing_time_s": 10.7,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://thisdomaindoesnotexist12345.com",
+      "https://thisdomaindoesnotexist12345.com/about",
+      "https://thisdomaindoesnotexist12345.com/team",
+      "https://thisdomaindoesnotexist12345.com/company",
+      "https://thisdomaindoesnotexist12345.com/contact"
+    ]
+  },
+  {
+    "domain": "httpstat.us",
+    "status": "failed",
+    "error_reason": "All page fetches failed",
+    "intel": null,
+    "token_usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": 0.0
+    },
+    "timings": {
+      "fetch_s": 18.39,
+      "preprocess_s": 0.0,
+      "llm_s": 0.0,
+      "enrich_s": 0.0,
+      "total_s": 18.39
+    },
+    "processing_time_s": 18.39,
+    "pages_fetched": 0,
+    "urls_discovered": [
+      "https://httpstat.us",
+      "https://httpstat.us/about",
+      "https://httpstat.us/team",
+      "https://httpstat.us/company",
+      "https://httpstat.us/contact"
+    ]
+  }
+]

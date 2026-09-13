@@ -1,0 +1,30 @@
+{
+  "run_id": "2026-09-13_13-47-45",
+  "git_commit_hash": "uncommitted",
+  "model_used": "qwen/qwen3.8-27b",
+  "domains_requested": 3,
+  "domains": [
+    "arize.com",
+    "google.com",
+    "facebook.com"
+  ],
+  "success_count": 2,
+  "partial_count": 0,
+  "failed_count": 1,
+  "errors": [
+    {
+      "domain": "arize.com",
+      "error_reason": "Hard timeout (45s)"
+    }
+  ],
+  "total_duration_seconds": 45.6,
+  "per_domain_duration": {
+    "arize.com": 0.0,
+    "google.com": 16.32,
+    "facebook.com": 37.97
+  },
+  "avg_tokens_per_domain": 1336.3,
+  "total_tokens": 4009,
+  "total_cost_usd": 0.0024,
+  "avg_confidence_score": 0.75
+}
