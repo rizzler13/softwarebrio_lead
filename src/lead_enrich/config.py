@@ -25,10 +25,24 @@ class Settings(BaseSettings):
     domain_timeout_s: int = 80  # 80s ceiling allows 60s trigger stage + fetch/llm stages
     request_delay_s: tuple[float, float] = (0.1, 0.3)  # polite delay between page requests
 
-    # Trigger event agent (Browser-Use)
+    # Phase 1: HTTP-based trigger discovery (zero LLM tokens)
+    http_trigger_timeout_s: float = 15.0  # ceiling for HTTP-only phase
+    http_trigger_enabled: bool = True  # set False to skip Phase 1 and go straight to browser-use
+
+    # Phase 2: Browser-Use agent trigger discovery
     trigger_stage_timeout_s: float = 60.0  # 60s ceiling allows multi-step browser navigation
-    trigger_max_steps: int = 10  # max actions allowed per domain (enough for blog discovery + read)
+    trigger_max_steps: int = 6  # reduced from 10 — Phase 1 covers the easy paths
     trigger_provider: str = "auto"  # "auto", "both", "openrouter", or "groq"
+
+    # Rate limiting (free-tier defaults)
+    groq_tpm_limit: int = 30_000  # Groq free-tier TPM for compound model
+    openrouter_tpm_limit: int = 200_000  # OpenRouter free-tier TPM
+    rate_limit_backoff_base_s: float = 2.0
+    rate_limit_backoff_max_s: float = 30.0
+
+    # Trigger result caching
+    trigger_cache_enabled: bool = True
+    trigger_cache_ttl_days: int = 7
 
     # Content processing: 1000 tokens captures homepage pitch, audience, and leadership
     # while keeping prompt token payload compact and well within Groq's TPM limits.

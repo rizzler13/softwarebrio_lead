@@ -17,6 +17,7 @@ dependencies = [
     "structlog>=24.0",
     "browser-use>=0.13.0",
     "langchain-openai>=0.3.0",
+    "aiohttp>=3.9.0",
 ]
 
 [project.optional-dependencies]

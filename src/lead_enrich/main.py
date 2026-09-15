@@ -29,8 +29,11 @@ from lead_enrich.enricher import enrich_linkedin_urls
 from lead_enrich.extractor import extract_company_intel
 from lead_enrich.models import DomainResult, ProcessingStatus
 from lead_enrich.preprocessor import prepare_llm_input
+from lead_enrich.rate_limiter import ProviderRouter
 from lead_enrich.scorer import compute_confidence
 from lead_enrich.trigger_agent import discover_trigger_event
+from lead_enrich.trigger_cache import TriggerCache
+from lead_enrich.trigger_http import discover_trigger_http
 from lead_enrich.writer import write_run_output
 
 # Ensure stdout and stderr use blocking I/O so logging writes never raise
@@ -111,6 +114,8 @@ async def process_domain(
     agentic: bool = False,
     provider: str = "both",
     verbose: bool = False,
+    trigger_cache: TriggerCache | None = None,
+    router: ProviderRouter | None = None,
 ) -> DomainResult:
     """
     Full pipeline for a single domain. Every failure path returns a
@@ -200,13 +205,84 @@ async def process_domain(
         enrich_task = asyncio.create_task(_timed_enrich())
 
         if agentic:
-            trigger_task = asyncio.create_task(
-                discover_trigger_event(clean_domain, settings, provider=provider, verbose=verbose)
-            )
+            # Two-phase trigger discovery runs in parallel with enrichment
+            async def _two_phase_trigger():
+                """Phase 1 (HTTP) → Phase 2 (browser-use agent) fallthrough."""
+
+                # Check cache first
+                if trigger_cache:
+                    cached = trigger_cache.get(clean_domain)
+                    if cached:
+                        cached.trigger_phase = "cached"
+                        return cached, "cached", 0.0, 0.0
+
+                phase1_event = None
+                phase1_duration = 0.0
+                phase1_urls: list[str] = []
+
+                # Phase 1: HTTP-based discovery (zero LLM tokens)
+                if settings.http_trigger_enabled:
+                    try:
+                        phase1_event, phase1_status, phase1_duration = (
+                            await asyncio.wait_for(
+                                discover_trigger_http(clean_domain, settings),
+                                timeout=settings.http_trigger_timeout_s,
+                            )
+                        )
+                    except TimeoutError:
+                        phase1_duration = settings.http_trigger_timeout_s
+                        log.info("trigger_http_timeout", domain=clean_domain)
+                    except Exception as exc:
+                        log.debug("trigger_http_error", domain=clean_domain, error=str(exc))
+
+                    if phase1_event and phase1_event.confidence >= 0.60:
+                        # Strong Phase 1 result — skip Phase 2 entirely
+                        if trigger_cache:
+                            trigger_cache.put(clean_domain, phase1_event)
+                        log.info(
+                            "trigger_phase1_sufficient",
+                            domain=clean_domain,
+                            confidence=phase1_event.confidence,
+                            duration_s=phase1_duration,
+                        )
+                        return phase1_event, "completed", phase1_duration, phase1_duration
+
+                # Phase 2: Browser-Use agent (only if Phase 1 failed or low confidence)
+                phase2_event, phase2_status, phase2_duration = await discover_trigger_event(
+                    clean_domain,
+                    settings,
+                    provider=provider,
+                    verbose=verbose,
+                    phase1_urls_tried=phase1_urls,
+                    router=router,
+                )
+
+                total_duration = phase1_duration + phase2_duration
+
+                # Use whichever phase found the better result
+                if phase2_event and phase2_event.found:
+                    final_event = phase2_event
+                    final_status = phase2_status
+                elif phase1_event and phase1_event.found:
+                    final_event = phase1_event
+                    final_status = "completed"
+                else:
+                    final_event = phase2_event  # could be None or found=False
+                    final_status = phase2_status
+
+                # Cache the result
+                if trigger_cache and final_event:
+                    trigger_cache.put(clean_domain, final_event)
+
+                return final_event, final_status, total_duration, phase1_duration
+
+            trigger_task = asyncio.create_task(_two_phase_trigger())
             gather_res = await asyncio.gather(enrich_task, trigger_task)
-            (intel, enrich_s), (trigger_event, trigger_status, trigger_duration) = gather_res
+            (intel, enrich_s), trigger_res = gather_res
+            trigger_event, trigger_status, trigger_duration, http_duration = trigger_res
             result.timings.enrich_s = enrich_s
             result.timings.trigger_s = round(trigger_duration, 2)
+            result.timings.trigger_http_s = round(http_duration, 2)
             result.trigger_event_status = trigger_status
             if intel:
                 intel.trigger_event = trigger_event
@@ -214,6 +290,7 @@ async def process_domain(
             intel, enrich_s = await enrich_task
             result.timings.enrich_s = enrich_s
             result.timings.trigger_s = 0.0
+            result.timings.trigger_http_s = 0.0
             result.trigger_event_status = "disabled"
             if intel:
                 intel.trigger_event = None
@@ -250,6 +327,7 @@ async def run_pipeline(
     agentic: bool = False,
     provider: str = "both",
     verbose: bool = False,
+    no_cache: bool = False,
 ) -> list[DomainResult]:
     """
     Process multiple domains concurrently with a semaphore and per-domain timeouts.
@@ -261,6 +339,25 @@ async def run_pipeline(
     """
     semaphore = asyncio.Semaphore(settings.max_concurrent_domains)
     clean_domains = [normalize_domain(d) or d for d in domains]
+
+    # Initialize trigger cache and rate-limit router for agentic mode
+    trigger_cache = None
+    router = None
+    if agentic:
+        trigger_cache = TriggerCache(
+            cache_path=settings.output_dir / ".trigger_cache.json",
+            ttl_seconds=settings.trigger_cache_ttl_days * 86400,
+            enabled=settings.trigger_cache_enabled and not no_cache,
+        )
+        router = ProviderRouter()
+        has_groq = bool(settings.groq_api_key and settings.groq_api_key.strip())
+        has_or = bool(settings.openrouter_api_key and settings.openrouter_api_key.strip())
+        router.configure(
+            groq_tpm=settings.groq_tpm_limit,
+            openrouter_tpm=settings.openrouter_tpm_limit,
+            has_groq_key=has_groq,
+            has_openrouter_key=has_or,
+        )
 
     from playwright.async_api import async_playwright
 
@@ -315,6 +412,8 @@ async def run_pipeline(
                             agentic=agentic,
                             provider=provider,
                             verbose=verbose,
+                            trigger_cache=trigger_cache,
+                            router=router,
                         ),
                         timeout=settings.domain_timeout_s,
                     )
@@ -407,6 +506,11 @@ def parse_args() -> argparse.Namespace:
             '"both" (OpenRouter + Groq fallback), "openrouter", or "groq"'
         ),
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Bypass trigger event cache and force fresh discovery",
+    )
     return parser.parse_args()
 
 
@@ -468,6 +572,7 @@ async def main() -> None:
         agentic=args.agentic,
         provider=provider,
         verbose=args.verbose,
+        no_cache=args.no_cache,
     )
 
     elapsed = round(time.monotonic() - start, 1)

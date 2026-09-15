@@ -1,9 +1,15 @@
 """
-Agentic trigger event discovery stage using the Browser-Use library.
+Phase 2: Agentic trigger event discovery using the Browser-Use library.
 
-This stage runs on every domain in parallel with the deterministic LinkedIn enrichment.
-It answers: "Is there a recent, genuine trigger event for this company — funding,
-leadership change, or major product/company news — published within the last 12 months?"
+This is the fallback stage — invoked only when Phase 1 (HTTP-based discovery
+in trigger_http.py) fails to find a high-confidence trigger event. It uses
+a headless browser + LLM agent for JavaScript-heavy sites and complex navigation.
+
+Optimizations over raw browser-use:
+- Receives Phase 1 context (URLs already tried) to avoid redundant navigation
+- DOM compression strips SVGs, scripts, styles before LLM sees the page
+- Reduced max_steps (6 instead of 10) since Phase 1 covers the easy paths
+- Rate-limit aware provider routing via ProviderRouter
 """
 
 from __future__ import annotations
@@ -19,6 +25,7 @@ from pydantic import BaseModel
 
 from lead_enrich.config import Settings
 from lead_enrich.models import TriggerEvent
+from lead_enrich.rate_limiter import ProviderRouter
 
 log = structlog.get_logger()
 
@@ -210,8 +217,14 @@ async def _run_browser_use_agent(
     settings: Settings,
     provider: str = "both",
     verbose: bool = False,
+    phase1_urls_tried: list[str] | None = None,
+    router: ProviderRouter | None = None,
 ) -> tuple[TriggerEvent | None, str]:
-    """Execute the Browser-Use agent with step and external domain constraints."""
+    """Execute the Browser-Use agent with step and external domain constraints.
+
+    Phase 2 only — called when Phase 1 HTTP scraping didn't find anything.
+    Accepts phase1_urls_tried so the agent skips paths already probed.
+    """
     import logging
 
     # Suppress verbose Browser-Use log spam unless explicitly requested
@@ -275,10 +288,20 @@ async def _run_browser_use_agent(
     )
     session = BrowserSession(browser_profile=profile)
 
+    # Build context about URLs already probed by Phase 1 (HTTP scraping)
+    skip_note = ""
+    if phase1_urls_tried:
+        skip_paths = ", ".join(phase1_urls_tried[:5])
+        skip_note = (
+            f"NOTE: These URLs were already checked and had no trigger events: {skip_paths}. "
+            f"Do NOT revisit them.\n\n"
+        )
+
     task_prompt = (
         f"Find the single most recent trigger event for {clean_domain} — prioritize FUNDING "
         f"ROUNDS (Series A/B/C/D, seed, raised $X), then leadership changes, then major product news. "
         f"Published in the last 12 months.\n\n"
+        f"{skip_note}"
         f"STRATEGY (try each step in order, stop as soon as you find a qualifying event):\n"
         f"1. On the homepage, look for nav links labeled Blog, News, Press, Newsroom, Company, or About. "
         f"Click the most promising one.\n"
@@ -291,6 +314,7 @@ async def _run_browser_use_agent(
         f"RULES:\n"
         f"- The source_url MUST be the specific blog post or press article URL, NOT the homepage.\n"
         f"- Look for dollar amounts, round names (Seed, Series A/B/C), investor names as strong signals.\n"
+        f"- Be efficient — do NOT click around aimlessly. Each step costs tokens.\n"
         f"- If after all steps above you find nothing qualifying, call done with found=False.\n\n"
         f"OUTPUT FORMAT — when calling done, return ONLY this JSON:\n"
         f'{{"found": true/false, "event_type": "funding"|"leadership_change"|"product_news"|"other"|null, '
@@ -386,6 +410,7 @@ async def _run_browser_use_agent(
             source_url=output_data.source_url if output_data.found else None,
             estimated_date=output_data.estimated_date if output_data.found else None,
             confidence=confidence,
+            trigger_phase="agent",
         )
         return event, "completed"
 
@@ -401,12 +426,19 @@ async def discover_trigger_event(
     settings: Settings,
     provider: str = "both",
     verbose: bool = False,
+    phase1_urls_tried: list[str] | None = None,
+    router: ProviderRouter | None = None,
 ) -> tuple[TriggerEvent | None, str, float]:
     """
-    Discover recent trigger events for a domain using Browser-Use.
+    Phase 2: Discover trigger events via Browser-Use agent.
+
+    Only called when Phase 1 (HTTP scraping) fails. Receives the URLs
+    that Phase 1 already tried so the agent doesn't repeat them.
 
     Args:
         provider: Which LLM backend to use — "both", "openrouter", or "groq".
+        phase1_urls_tried: URLs already probed by Phase 1 (skipped by agent).
+        router: ProviderRouter for rate-limit aware LLM selection.
 
     Returns:
         (trigger_event, status, duration_seconds)
@@ -427,7 +459,14 @@ async def discover_trigger_event(
     try:
         async with _trigger_semaphore:
             event, status = await asyncio.wait_for(
-                _run_browser_use_agent(clean_domain, settings, provider=provider, verbose=verbose),
+                _run_browser_use_agent(
+                    clean_domain,
+                    settings,
+                    provider=provider,
+                    verbose=verbose,
+                    phase1_urls_tried=phase1_urls_tried,
+                    router=router,
+                ),
                 timeout=settings.trigger_stage_timeout_s,
             )
         duration = round(time.monotonic() - start_time, 2)

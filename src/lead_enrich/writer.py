@@ -31,11 +31,13 @@ CSV_FIELDNAMES = [
     "trigger_event_source",
     "trigger_event_date",
     "trigger_event_confidence",
+    "trigger_phase",
     "fetch_s",
     "preprocess_s",
     "llm_s",
     "enrich_s",
     "trigger_s",
+    "trigger_http_s",
     "prompt_tokens",
     "completion_tokens",
     "total_tokens",
@@ -88,11 +90,13 @@ def _format_csv_row(result: DomainResult) -> dict:
         "trigger_event_source": trigger.source_url if trigger and trigger.found else "",
         "trigger_event_date": trigger.estimated_date if trigger and trigger.found else "",
         "trigger_event_confidence": trigger.confidence if trigger else 0.0,
+        "trigger_phase": trigger.trigger_phase if trigger else "",
         "fetch_s": result.timings.fetch_s,
         "preprocess_s": result.timings.preprocess_s,
         "llm_s": result.timings.llm_s,
         "enrich_s": result.timings.enrich_s,
         "trigger_s": result.timings.trigger_s,
+        "trigger_http_s": result.timings.trigger_http_s,
         "prompt_tokens": result.token_usage.prompt_tokens,
         "completion_tokens": result.token_usage.completion_tokens,
         "total_tokens": result.token_usage.total_tokens,
@@ -157,6 +161,18 @@ def write_run_output(
     trigger_events_found = sum(
         1 for r in results if r.intel and r.intel.trigger_event and r.intel.trigger_event.found
     )
+    trigger_http_hits = sum(
+        1 for r in results
+        if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "http"
+    )
+    trigger_agent_hits = sum(
+        1 for r in results
+        if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "agent"
+    )
+    trigger_cache_hits = sum(
+        1 for r in results
+        if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "cached"
+    )
     trigger_stage_timeouts = sum(1 for r in results if r.trigger_event_status == "timeout")
     trigger_durations = [r.timings.trigger_s for r in results if r.timings.trigger_s > 0]
     avg_trigger_duration = (
@@ -180,6 +196,9 @@ def write_run_output(
         total_cost_usd=round(total_cost, 4),
         avg_confidence_score=avg_confidence,
         trigger_events_found=trigger_events_found,
+        trigger_http_hits=trigger_http_hits,
+        trigger_agent_hits=trigger_agent_hits,
+        trigger_cache_hits=trigger_cache_hits,
         avg_trigger_stage_duration_s=avg_trigger_duration,
         trigger_stage_timeouts=trigger_stage_timeouts,
     )

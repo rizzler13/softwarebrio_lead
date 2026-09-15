@@ -27,6 +27,7 @@ def print_cost_report(results: list[DomainResult]) -> None:
     )
 
     has_trigger = any(r.timings.trigger_s > 0 for r in results)
+    has_http_phase = any(r.timings.trigger_http_s > 0 for r in results)
 
     table.add_column("domain", no_wrap=True)
     table.add_column("status", no_wrap=True)
@@ -34,6 +35,8 @@ def print_cost_report(results: list[DomainResult]) -> None:
     table.add_column("llm", justify="right", no_wrap=True)
     table.add_column("enrich", justify="right", no_wrap=True)
     if has_trigger:
+        if has_http_phase:
+            table.add_column("trig·http", justify="right", no_wrap=True)
         table.add_column("trigger", justify="right", no_wrap=True)
     table.add_column("total", justify="right", no_wrap=True)
     table.add_column("tokens (p/c/t)", justify="right", no_wrap=True)
@@ -66,6 +69,8 @@ def print_cost_report(results: list[DomainResult]) -> None:
             f"{timings.enrich_s:.2f}s" if timings.enrich_s > 0 else "—",
         ]
         if has_trigger:
+            if has_http_phase:
+                row.append(f"{timings.trigger_http_s:.2f}s" if timings.trigger_http_s > 0 else "—")
             row.append(f"{timings.trigger_s:.2f}s" if timings.trigger_s > 0 else "—")
         row.extend(
             [
@@ -82,9 +87,31 @@ def print_cost_report(results: list[DomainResult]) -> None:
 
     total_tokens_str = f"{total_prompt}/{total_completion}/{total_prompt + total_completion}"
 
+    # Trigger phase summary
+    if has_trigger:
+        http_hits = sum(
+            1 for r in results
+            if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "http"
+        )
+        agent_hits = sum(
+            1 for r in results
+            if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "agent"
+        )
+        cache_hits = sum(
+            1 for r in results
+            if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "cached"
+        )
+        if http_hits or agent_hits or cache_hits:
+            console.print(
+                f"[dim]  trigger phases: {http_hits} http · {agent_hits} agent · "
+                f"{cache_hits} cached[/dim]"
+            )
+
     table.add_section()
     tot_row = ["total", "", "", "", ""]
     if has_trigger:
+        if has_http_phase:
+            tot_row.append("")
         tot_row.append("")
     tot_row.extend(["", total_tokens_str, f"${total_cost:.4f}"])
     table.add_row(*tot_row, style="bold")

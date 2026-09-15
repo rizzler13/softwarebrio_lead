@@ -56,7 +56,7 @@ class TeamMember(BaseModel):
 
 
 class TriggerEvent(BaseModel):
-    """Recent company trigger event discovered by the agentic Browser-Use stage."""
+    """Recent company trigger event discovered by the agentic trigger stages."""
 
     found: bool = False
     event_type: Literal["funding", "leadership_change", "product_news", "other"] | None = None
@@ -64,6 +64,7 @@ class TriggerEvent(BaseModel):
     source_url: str | None = None  # the page where it was found/confirmed
     estimated_date: str | None = None  # month/year or date string
     confidence: float = Field(0.0, ge=0.0, le=1.0)
+    trigger_phase: Literal["http", "agent", "cached", "skipped"] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +135,7 @@ class StageTimings(BaseModel):
     llm_s: float = 0.0
     enrich_s: float = 0.0
     trigger_s: float = 0.0
+    trigger_http_s: float = 0.0  # Phase 1 HTTP-only trigger discovery
     total_s: float = 0.0
 
 
@@ -191,5 +193,8 @@ class RunManifest(BaseModel):
 
     # Agentic stage telemetry
     trigger_events_found: int = 0
+    trigger_http_hits: int = 0  # events found by Phase 1 (zero LLM tokens)
+    trigger_agent_hits: int = 0  # events found by Phase 2 (browser-use agent)
+    trigger_cache_hits: int = 0  # events served from cache
     avg_trigger_stage_duration_s: float = 0.0
     trigger_stage_timeouts: int = 0
