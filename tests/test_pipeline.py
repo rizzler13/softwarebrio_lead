@@ -12,7 +12,7 @@ from unittest.mock import patch
 import pytest
 
 from lead_enrich.config import Settings
-from lead_enrich.main import process_domain, run_pipeline
+from lead_enrich.main import parse_args, process_domain, run_pipeline
 from lead_enrich.models import DomainResult, ProcessingStatus
 
 
@@ -114,3 +114,24 @@ class TestPipelineIsolation:
         assert statuses["good2.com"] == ProcessingStatus.SUCCESS
         # The bad domain should be failed, not missing
         assert statuses["bad-domain.com"] == ProcessingStatus.FAILED
+
+
+class TestCLIArgs:
+    """Verify CLI argument parsing handles custom run names and flags."""
+
+    def test_default_args(self):
+        with patch("sys.argv", ["lead_enrich", "--domains", "linear.app,railway.app"]):
+            args = parse_args()
+            assert args.domains == "linear.app,railway.app"
+            assert args.name is None
+            assert args.open is False
+
+    def test_custom_name_and_open_flags(self):
+        with patch(
+            "sys.argv",
+            ["lead_enrich", "--domains", "linear.app", "--name", "demo_run", "--open"],
+        ):
+            args = parse_args()
+            assert args.domains == "linear.app"
+            assert args.name == "demo_run"
+            assert args.open is True

@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -267,7 +268,19 @@ def parse_args() -> argparse.Namespace:
         "--domains",
         type=str,
         required=True,
-        help='Comma-separated list of domains, e.g. "postman.com,supabase.com,vapi.ai"',
+        help='Comma-separated list of domains, e.g. "notion.com,stripe.com,linear.app"',
+    )
+    parser.add_argument(
+        "--name",
+        "-n",
+        type=str,
+        default=None,
+        help="Custom run ID for output files (e.g. --name demo -> run_demo.json)",
+    )
+    parser.add_argument(
+        "--open",
+        action="store_true",
+        help="Automatically open generated output files in VS Code after completion",
     )
     return parser.parse_args()
 
@@ -291,7 +304,12 @@ async def main() -> None:
     results = await run_pipeline(domains, settings)
 
     elapsed = round(time.monotonic() - start, 1)
-    run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    if args.name:
+        clean_name = "".join(c for c in args.name if c.isalnum() or c in ("-", "_")).strip()
+        run_id = clean_name or datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    else:
+        run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Write run-specific timestamped files, manifest, and update all_leads archive
     run_json, run_csv, manifest_path = write_run_output(
@@ -318,6 +336,13 @@ async def main() -> None:
 
     # Cost report
     print_cost_report(results)
+
+    if args.open:
+        try:
+            subprocess.run(["code", str(run_json), str(run_csv)], check=False)
+            console.print(f"  [dim]opened {run_json.name} and {run_csv.name} in VS Code[/dim]")
+        except Exception as exc:
+            console.print(f"  [dim]could not launch VS Code: {exc}[/dim]")
 
 
 if __name__ == "__main__":
