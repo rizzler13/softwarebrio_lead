@@ -1,6 +1,6 @@
 # Lead Intelligence & Enrichment Engine
 
-An autonomous, concurrent web intelligence pipeline designed to crawl company websites, extract high-signal B2B lead data (value proposition, ICP, verified corporate emails, executive leadership), and optionally deploy an autonomous browser agent to discover timely trigger events.
+An autonomous, concurrent web intelligence, and optionally deploy an autonomous browser agent to discover timely trigger events.
 
 Built with Python 3.11+, Playwright, Instructor, Pydantic, and Browser-Use.
 
