@@ -1,170 +1,238 @@
 # Lead Intelligence & Enrichment Engine
 
-An autonomous, concurrent web intelligence pipeline that extracts structured company data, leadership profiles, verified contact emails, and trigger events from public company websites.
+An autonomous, concurrent web intelligence pipeline designed to crawl company websites, extract high-signal B2B lead data (value proposition, ICP, verified corporate emails, executive leadership), and optionally deploy an autonomous browser agent to discover timely trigger events.
 
-Built with Python 3.11+, Playwright, Instructor, and Pydantic.
+Built with Python 3.11+, Playwright, Instructor, Pydantic, and Browser-Use.
 
 ---
 
-## What Sets This Apart
+## Why This Exists (And How I Built It)
 
-While the initial assignment called for extracting data from 3 target domains, we engineered this system for **production-scale batch concurrency and resilience**:
+Most lead scraping tools fall into one of two extremes:
+1. **Dumb regex/HTML scrapers** that break the moment a company changes their CSS or uses a Single Page Application (SPA).
+2. **Brittle "pure agent" setups** that spend 2 minutes and 50,000 tokens clicking around randomly just to find an "About" page.
 
-- **Benchmarked Across 10 Diverse & Adversarial Domains**: Evaluated against complex Single Page Applications (`linear.app`, `clerk.com`, `stripe.com`), content-heavy platforms (`notion.com`, `airtable.com`), DNS failures (`thisdomaindoesnotexist12345.com`), and network timeout sinks (`httpstat.us`).
-- **Sub-30s Batch Execution**: Processes 10 domains concurrently in **29.6 seconds** total wall-clock time through decoupled resource semaphores (8 concurrent browser pages, 2 concurrent LLM workers with micro-pacing).
-- **Zero-Crash Resilience**: Fault-isolated architecture ensures network hangs, rate limits, or browser crashes on one domain never fail the batch. Every domain produces a typed `DomainResult`.
-- **Ground-Truth Verification**:
-  - Eliminates testimonial quotes being misclassified as executives (e.g. customer quotes on Notion).
-  - Corporate brand disambiguation rejects unrelated companies sharing names 
-  - Name-to-LinkedIn slug verification ensures profile URLs strictly belong to the extracted person.
-  - Email boundary sanitization eliminates trailing artifacts and documentation placeholders (`example.com`, `bad_actor`).
-- **Grounded Confidence Scoring**: Replaced self-inflated LLM ratings with auditable signal-based scoring rooted in verified evidence.
+I built this pipeline around a **hybrid, two-tier architecture**:
+- **The Fast Path (Deterministic & Fast)**: Uses headless Playwright with aggressive asset blocking (dropping images, fonts, and stylesheets) to crawl core navigation and footer links. It strips DOM noise, budgets tokens tightly, and uses Instructor with Groq (`openai/gpt-oss-120b`) for validated, typed Pydantic extraction. Then, it uses Tavily to cross-reference and verify executive LinkedIn profiles.
+- **The Deep Path (Agentic & Autonomous)**: When run with `--agentic`, it hands off to a bounded `browser-use` sub-agent. The agent specifically hunts for genuine trigger events—like recent Series A/B funding rounds, leadership changes, or major product launches from the last 12 months—without wasting steps or hallucinating events.
+
+---
+
+## Key Engineering Decisions
+
+### 1. Decoupled Concurrency & Strict Resource Semaphores
+Running multiple browser instances while simultaneously hitting LLM inference endpoints easily leads to resource contention and 429 rate limits.
+- The pipeline isolates domain workers with `asyncio.gather`, but caps concurrent browser pages and LLM calls via dedicated internal semaphores.
+- If a target domain has a dead DNS record, times out, or triggers bot mitigation, the failure is trapped in that domain's isolated error boundary. It records a structured `DomainResult` with the failure reason and execution timings, and the rest of the batch completes uninterrupted.
+
+### 2. Ground-Truth Verification Over Hallucinated Data
+LLMs have a bad habit of hallucinating plausible-looking data when given messy HTML. To keep data high quality:
+- **Testimonial Rejection**: Filters out customer quotes masquerading as company executives (e.g. customer testimonials on landing pages).
+- **Brand & Company Disambiguation**: Cross-checks executive LinkedIn search results against the target company's actual brand and domain, discarding people with matching names who work at completely different firms.
+- **Strict Name-to-Slug Matching**: Ensures returned LinkedIn URLs actually match the person's name rather than returning a generic directory or unrelated profile.
+- **Clean Inboxes**: Validates email format and strips trailing punctuation, junk characters, and documentation placeholders (`example.com`, `domain.com`).
+
+### 3. Grounded Confidence Scoring
+Instead of asking an LLM "how confident are you?" (which almost always answers 0.95+), the confidence score is calculated deterministically from verified signals:
+- Base score is awarded for presence and quality of core fields (overview, target audience, verified emails, executive team).
+- For agentic trigger events, confidence requires strict corroboration:
+  - **No Bare Homepage Citations**: The agent cannot cite `https://company.com/` for a funding round; it must point to the specific blog post, press release, or changelog URL.
+  - **Substantive Text Overlap**: Summary keywords must genuinely appear in the visited page text (using word-boundary matching so words like `fundamental` don't trigger a false positive for `fund`).
+  - Unsubstantiated or ungrounded claims are strictly hard-capped at $\le 0.30$.
+
+### 4. Token & Cost Efficiency
+- Preprocessing token budgeting keeps prompt payloads compact (~1,000 tokens per domain).
+- Average cost runs at less than **$0.001 per domain** on the core extraction path, with execution times hovering around 6–12 seconds per domain.
 
 ---
 
 ## Quick Start
 
-### 1. Installation
+### 1. Prerequisites & Installation
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/rizzler13/softwarebrio_lead.git
 cd softwarebrio_lead
 
-# Install dependencies and Playwright browser
+# Install dependencies (requires Python 3.11+)
 pip install -e ".[dev]"
+
+# Install Playwright Chromium binaries
 playwright install chromium
 ```
 
-### 2. Configure Environment
+### 2. Environment Configuration
 
-Copy the example environment file:
+Copy the sample environment file:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your API keys:
-- `GROQ_API_KEY`: Required for LLM extraction and agentic mode (`openai/gpt-oss-120b` / `groq/compound`)
-- `TAVILY_API_KEY`: used for executive LinkedIn profile discovery
-- `OPENROUTER_API_KEY`: Optional: if present, agentic mode can use `openai/gpt-4o-mini`
+Add your API keys to `.env`:
+```env
+# Required: Fast LLM extraction via Groq (e.g. openai/gpt-oss-120b)
+GROQ_API_KEY=gsk_your_groq_key_here
 
-### 3. Run Pipeline
+# Optional: Executive LinkedIn discovery & verification
+TAVILY_API_KEY=tvly-your_tavily_key_here
+
+# Optional: For agentic mode using OpenAI/OpenRouter models
+OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
+```
+
+---
+
+## Running the Pipeline
+
+### Core Mode (Fast & Deterministic)
+Extracts structured company overview, target audience, verified inboxes, and executive leadership profiles:
+```bash
+python -m lead_enrich --domains "vapi.ai, supabase.com, postman.com"
+```
+
+### Agentic Mode (Autonomous Trigger Discovery)
+Spawns the `browser-use` agent to actively navigate the company's site, hunt down blog/press pages, and extract verified trigger events from the last 12 months:
+```bash
+python -m lead_enrich --domains "vapi.ai, supabase.com" --agentic
+```
+
+### Choosing an LLM Provider for the Trigger Agent
+You can specify the LLM backend for the agentic stage via `--provider`:
+```bash
+# Auto mode: prompts interactively or picks based on available keys
+python -m lead_enrich --domains "vapi.ai --agentic --provider auto
+
+# Use OpenRouter (gpt-4o-mini) with Groq fallback
+python -m lead_enrich --domains "vapi.ai" --agentic --provider both
+
+# Force Groq only (groq/compound) or OpenRouter only
+python -m lead_enrich --domains "vapi.ai" --agentic --provider groq
+```
+
+### Naming Runs & Inspecting Results
+Give your run a clean identifier and open the resulting files automatically:
+```bash
+# Runs the batch, saves outputs as run_demo.*, and opens in VS Code
+python -m lead_enrich --domains "vapi.ai, supabase.com" --name demo --open
+```
+
+### CLI Options
+
+| Flag | Shorthand | Description |
+| :--- | :---: | :--- |
+| `--domains` | | Comma-separated domains to process (e.g. `"linear.app,stripe.com"`). |
+| `--agentic` | | Enables the autonomous browser agent for trigger event discovery. |
+| `--provider` | | Trigger agent LLM: `auto`, `both`, `openrouter`, or `groq`. |
+| `--name` | `-n` | Custom run name identifier (e.g. `--name batch1` $\rightarrow$ `run_batch1.json`). |
+| `--open` | | Automatically opens the generated JSON and CSV in your editor. |
+| `--verbose` | `-v` | Enables detailed, step-by-step logs of browser and agent actions. |
+
+---
+
+## Output Structure
+
+Every run creates isolated artifacts in `output/runs/` and appends to a cumulative master archive:
+
+```
+output/
+├── all_leads.csv              # Cumulative master CSV of all runs
+├── all_leads.json             # Cumulative master JSON of all runs
+└── runs/
+    ├── run_<id>.json          # Full structured JSON for this run
+    ├── run_<id>.csv           # Flat CSV export formatted for CRM / SDR ingestion
+    └── manifest_<id>.json     # Run metadata, timings, model name, and token cost breakdown
+```
+
+### Sample Lead Record Schema
+
+```json
+{
+  "domain": "linear.app",
+  "status": "success",
+  "error_reason": null,
+  "intel": {
+    "company_overview": "Purpose-built tool for modern software development teams...",
+    "target_audience": "Software engineering, product management, and design teams.",
+    "contact_emails": ["support@linear.app", "sales@linear.app"],
+    "key_team_members": [
+      {
+        "name": "Karri Saarinen",
+        "role": "Co-Founder & CEO",
+        "linkedin_url": "https://www.linkedin.com/in/karrisaarinen"
+      }
+    ],
+    "confidence_score": 0.82,
+    "trigger_event": {
+      "found": true,
+      "event_type": "product_news",
+      "summary": "Announced Linear Asks and new customer support integrations.",
+      "source_url": "https://linear.app/blog/linear-asks",
+      "estimated_date": "2026-04",
+      "confidence": 0.80
+    }
+  },
+  "token_usage": {
+    "prompt_tokens": 660,
+    "completion_tokens": 285,
+    "total_tokens": 945,
+    "cost_usd": 0.00062
+  },
+  "timings": {
+    "fetch_s": 2.4,
+    "preprocess_s": 0.1,
+    "llm_s": 1.2,
+    "enrich_s": 2.1,
+    "trigger_s": 5.5,
+    "total_s": 11.3
+  }
+}
+```
+
+---
+
+## Testing & Quality
+
+The project includes a comprehensive test suite (46 automated tests) covering Pydantic models, DOM preprocessing, LinkedIn title parsing, trigger agent degradation, and confidence scoring:
 
 ```bash
-# Core pipeline: fast, deterministic extraction + LinkedIn enrichment
-python -m lead_enrich --domains "linear.app,railway.app,resend.com"
+# Run tests
+pytest
 
-# Agentic mode: enables autonomous Browser-Use agent for trigger event discovery
-python -m lead_enrich --domains "linear.app,railway.app" --agentic
-
-
-```
-
----
-
-## Demoing & Inspecting Output
-
-### Name Your Run Output
-Use `--name` (or `-n`) to give your run a clean identifier instead of a default timestamp:
-```bash
-python -m lead_enrich --domains "linear.app,railway.app,resend.com" --name demo --open
-```
-This generates:
-- `output/runs/run_demo.json` — Structured JSON payload with full intelligence, timings, and token metrics.
-- `output/runs/run_demo.csv` — Flat spreadsheet ready for CRM or SDR ingestion.
-- `output/runs/manifest_demo.json` — Operational telemetry and token cost audit.
-
-### Quick Reference Commands
-
-| Goal | Terminal Command |
-| :--- | :--- |
-| **Open latest JSON run** | `code $(ls -t output/runs/run_*.json \| head -1)` |
-| **Open latest CSV run** | `code $(ls -t output/runs/run_*.csv \| head -1)` |
-| **Open master leads archive** | `code output/all_leads.csv` |
-| **Open master leads JSON** | `code output/all_leads.json` |
-| **View cost & token summary** | Printed directly to stdout after every run |
-
----
-
-## Pipeline Architecture
-
-```
-                    Input: Comma-separated domains
-                                │
-                    Orchestrator (main.py)
-      asyncio.gather · Max Concurrency=5 · Hard Timeout=70s
-                                │
-                ┌───────────────┴───────────────┐
-                ▼                               ▼
-       Domain Worker A                 Domain Worker B
-                │
-   1. discover_urls()          Playwright nav & footer link crawler
-                │
-   2. fetch_all_pages()        Playwright browser pool (8 concurrent pages)
-                │              Asset blocking (images, fonts, media)
-                │
-   3. prepare_llm_input()      DOM noise stripping, token budget allocation
-                │
-   4. extract_company_intel()  Instructor + Groq (Pydantic schema validation)
-                │
-        ┌───────┴────────────────────────┐
-        ▼ (concurrent)                   ▼ (concurrent)
-   5a. enrich_linkedin_urls()       5b. discover_trigger_event()
-       Tavily search & slug match       Browser-Use agent (45s isolated budget)
-        └───────┬────────────────────────┘
-                │
-   6. compute_confidence()     Grounded signal scoring & penalties
-                │
-   7. write_run_output()       Timestamped JSON/CSV + Run Manifest + Master Append
-```
-
----
-
-## 10-Domain Benchmark Results
-
-Real execution metrics from batch run (`2026-09-13_15-44-40`):
-
-| Domain | Status | Duration | Prompt / Compl Tokens | Est. Cost | Verified Leadership | Confidence |
-| :--- | :---: | :---: | :---: | :---: | :--- | :---: |
-| **notion.com** | `ok` | 13.3s | 660 / 475 | $0.00076 | Ivan Zhao (Founder) | 0.82 |
-| **stripe.com** | `ok` | 6.8s | 659 / 278 | $0.00061 | William Gaybrick (President) | 0.81 |
-| **linear.app** | `ok` | 11.3s | 660 / 285 | $0.00062 | Karri Saarinen (Co-Founder, CEO) | 0.82 |
-| **railway.app** | `ok` | 12.2s | 655 / 250 | $0.00058 | Verified inboxes | 0.66 |
-| **resend.com** | `ok` | 12.0s | 653 / 414 | $0.00071 | Verified inboxes | 0.66 |
-| **airtable.com** | `ok` | 6.1s | 660 / 134 | $0.00050 | Emmett Nicholas (Co-founder) | 0.82 |
-| **retool.com** | `ok` | 6.2s | 658 / 228 | $0.00057 | David Hsu (Founder, CEO) | 0.82 |
-| **clerk.com** | `ok` | 6.1s | 652 / 233 | $0.00057 | Braden Sidoti (CTO) | 0.82 |
-| **thisdomaindoesnotexist12345.com** | `failed` | 0.3s | 0 / 0 | $0.00000 | Clean DNS error capture | 0.00 |
-| **httpstat.us** | `failed` | 16.2s | 0 / 0 | $0.00000 | Clean timeout degradation | 0.00 |
-| **TOTAL** | **8 / 10 ok** | **29.6s** | **5,257 / 2,297** | **$0.0049** | — | **0.81 (real)** |
-
----
-
-## Output Schema Reference
-
-Each extracted lead record contains:
-- `domain`: Target company domain
-- `status`: `"success"` | `"partial"` | `"failed"`
-- `error_reason`: Root-cause failure explanation if unsuccessful
-- `intel`:
-  - `company_overview`: Value proposition and core offering
-  - `target_audience`: Target ICP and buyer personas
-  - `contact_emails`: Verified corporate email addresses
-  - `key_team_members`: Validated executives with corroborated LinkedIn URLs
-  - `confidence_score`: Grounded score between `0.0` and `1.0`
-  - `trigger_event`: Recent funding, executive hire, or product milestone (if found)
-- `token_usage`: Exact prompt, completion, total tokens, and USD cost
-- `timings`: Stage-by-stage latency (`fetch_s`, `preprocess_s`, `llm_s`, `enrich_s`, `trigger_s`, `total_s`)
-
----
-
-## Testing & Verification
-
-```bash
-# Run full test suite (39 tests)
-pytest tests/ -v
-
-# Run code style & linting checks
+# Run linter and formatting checks
 ruff check src/ tests/
 ruff format --check src/ tests/
+```
+
+---
+
+## Architecture Flow
+
+```
+                 Input: Comma-separated domains
+                               │
+               Orchestrator (asyncio.gather)
+             Bounded Concurrency & Error Bounds
+                               │
+                ┌──────────────┴──────────────┐
+                ▼                             ▼
+         Domain Worker A               Domain Worker B
+                │
+   1. discover_urls()       Playwright link discovery & footer crawl
+                │
+   2. fetch_all_pages()     Parallel page fetch with asset blocking
+                │
+   3. prepare_llm_input()   Noise stripping & 1000-token budget packing
+                │
+   4. extract_company()     Instructor + Groq structured extraction
+                │
+        ┌───────┴────────────────────────┐
+        ▼ (concurrent)                   ▼ (concurrent, optional)
+   5a. enrich_linkedin()            5b. discover_trigger_event()
+       Tavily search & slug match       Browser-Use agent (bounded budget)
+        └───────┬────────────────────────┘
+                │
+   6. compute_confidence()  Grounded multi-signal confidence scoring
+                │
+   7. write_run_output()    run_<id>.json, run_<id>.csv, manifest_<id>.json
 ```
