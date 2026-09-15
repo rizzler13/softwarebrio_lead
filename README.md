@@ -6,7 +6,7 @@ Built with Python 3.11+, Playwright, Instructor, Pydantic, and Browser-Use.
 
 ---
 
-<img width="104" height="150" alt="lead_enrichment_pipeline_sequence" src="https://github.com/user-attachments/assets/640849b1-3ccf-42f1-b6b4-7952e393dfbd" />
+   ![Pipeline architecture](pipeline.svg)
 
 
 ## Why This Exists (And How I Built It)
