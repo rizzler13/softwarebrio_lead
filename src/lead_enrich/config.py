@@ -21,12 +21,12 @@ class Settings(BaseSettings):
     # Concurrency & timeouts
     max_concurrent_domains: int = 5  # Pipelined domain batching prevents queue starvation
     page_timeout_ms: int = 8_000  # 8s per page with asset blocking to prevent false timeouts
-    domain_timeout_s: int = 70  # 70s ceiling allows 45s trigger stage + fetch/llm stages
+    domain_timeout_s: int = 50  # 50s ceiling allows 30s trigger stage + fetch/llm stages
     request_delay_s: tuple[float, float] = (0.1, 0.3)  # polite delay between page requests
 
     # Trigger event agent (Browser-Use)
-    trigger_stage_timeout_s: float = 45.0  # hard wall-clock timeout for trigger stage
-    trigger_max_steps: int = 8  # max actions allowed per domain
+    trigger_stage_timeout_s: float = 30.0  # hard wall-clock timeout for trigger stage
+    trigger_max_steps: int = 5  # max actions allowed per domain
 
     # Content processing: 320 tokens splits cleanly between homepage pitch and team page
     token_budget: int = 320

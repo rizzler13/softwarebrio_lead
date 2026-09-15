@@ -161,15 +161,19 @@ async def process_domain(domain: str, settings: Settings, browser=None) -> Domai
         intel.contact_emails = sorted(browser_emails | llm_emails)
 
         # Stage 5: Enrich with LinkedIn search and discover trigger event concurrently
-        t_enrich_start = time.monotonic()
-        enrich_task = asyncio.create_task(enrich_linkedin_urls(intel, clean_domain, settings))
+        async def _timed_enrich():
+            t0 = time.monotonic()
+            enriched_intel = await enrich_linkedin_urls(intel, clean_domain, settings)
+            duration = round(time.monotonic() - t0, 2)
+            return enriched_intel, duration
+
+        enrich_task = asyncio.create_task(_timed_enrich())
         trigger_task = asyncio.create_task(discover_trigger_event(clean_domain, settings))
 
-        intel, (trigger_event, trigger_status, trigger_duration) = await asyncio.gather(
-            enrich_task,
-            trigger_task,
+        (intel, enrich_s), (trigger_event, trigger_status, trigger_duration) = await asyncio.gather(
+            enrich_task, trigger_task
         )
-        result.timings.enrich_s = round(time.monotonic() - t_enrich_start, 2)
+        result.timings.enrich_s = enrich_s
         result.timings.trigger_s = round(trigger_duration, 2)
         result.trigger_event_status = trigger_status
         if intel:

@@ -124,48 +124,72 @@ def compute_trigger_confidence(
     event_data: TriggerEventOutput,
     visited_urls: list[str],
     extracted_text: str = "",
+    base_domain: str = "",
 ) -> float:
     """
     Compute grounded confidence for a discovered trigger event.
 
-    Rules:
+    Strict grounding rules:
     - If found=False or empty summary: 0.0
-    - If source_url was NOT reached/visited: capped at 0.30
-    - If source_url was reached: base 0.70 + keyword overlap bonus (0.10) + valid date (0.10)
+    - If source_url is absent or a bare homepage without proof: capped hard at <= 0.30
+    - If source_url was NOT specifically reached/visited: capped hard at <= 0.30
+    - If summary keywords do NOT appear in the visited content: capped hard at <= 0.30
+    - Only corroborated events on specifically visited announcement pages score >= 0.70
     """
     if not event_data.found or not event_data.summary:
         return 0.0
 
-    source_url = event_data.source_url or ""
-    visited_hosts = {_extract_host(u) for u in visited_urls if u}
+    source_url = (event_data.source_url or "").strip()
+    if not source_url:
+        return 0.25
 
-    # Verify reachability of source_url
+    parsed_src = urlparse(source_url)
+    path = parsed_src.path.strip("/")
+    is_bare_homepage = path in ("", "index.html", "index.htm", "home", "en", "us")
+
+    # Verify that the specific URL was actually navigated to during the run
+    src_clean = source_url.rstrip("/")
     was_visited = False
-    if source_url:
-        src_host = _extract_host(source_url)
-        was_visited = src_host in visited_hosts or any(
-            source_url in u or u in source_url for u in visited_urls
-        )
+    for u in visited_urls:
+        u_clean = u.rstrip("/")
+        if src_clean == u_clean:
+            was_visited = True
+            break
+        if not is_bare_homepage and (src_clean in u_clean or u_clean in src_clean):
+            was_visited = True
+            break
 
-    if not source_url or not was_visited:
+    if not was_visited:
         return 0.30
 
-    # Keyword overlap between summary and visited page context
-    summary_words = {
-        w.lower()
-        for w in re.findall(r"[a-zA-Z]{4,}", event_data.summary)
-        if w.lower() not in COMMON_STOPWORDS
-    }
+    brand = _extract_host(base_domain).split(".")[0].lower() if base_domain else ""
+    summary_words = [
+        w.lower().strip("$")
+        for w in re.findall(r"[a-zA-Z0-9$]+", event_data.summary)
+        if len(w.strip("$")) >= 2
+        and w.lower() not in COMMON_STOPWORDS
+        and w.lower() != brand
+        and not w.lower().isdigit()
+    ]
 
     if not summary_words:
-        return 0.50
+        return 0.30
 
-    target_text = (extracted_text + " " + source_url).lower()
-    matches = sum(1 for w in summary_words if w in target_text)
-    overlap_ratio = matches / len(summary_words) if summary_words else 0.0
+    # Bare homepage citations are not specific announcement sources; cap hard at <= 0.30
+    if is_bare_homepage:
+        return 0.30
+
+    target_text = extracted_text.lower()
+    page_words = set(re.findall(r"\b[a-z0-9$]+\b", target_text))
+    matches = [w for w in summary_words if w in page_words]
+    overlap_ratio = len(matches) / len(summary_words) if summary_words else 0.0
+
+    # Summary content must substantively appear in the visited page text
+    if len(matches) < 2 or overlap_ratio < 0.25:
+        return 0.30
 
     score = 0.70
-    if overlap_ratio >= 0.25 or matches >= 3:
+    if len(matches) >= 3 and overlap_ratio >= 0.40:
         score += 0.10
     if event_data.estimated_date and any(c.isdigit() for c in event_data.estimated_date):
         score += 0.10
@@ -197,12 +221,17 @@ async def _run_browser_use_agent(
 
     task_prompt = (
         f"Starting from https://{clean_domain}, find the single most recent, genuine company "
-        "news item (funding round, leadership change, or major product/company announcement) "
+        "news item (funding round, leadership change, or major product announcement) "
         "published within roughly the last 12 months. Check the homepage navigation or footer "
-        "for News, Blog, Press, or Changelog links. If found, navigate there, identify the top "
-        "qualifying headline, date, and source URL, and immediately call done with your findings. "
-        "If the homepage links out to an external press article, you may follow one external link. "
-        "Do not fabricate a date or event if none is found — return found=False instead."
+        "for News, Blog, Press, or Changelog links. Navigate to the exact announcement page, "
+        "identify the headline, date, and exact URL of that announcement article, and call done. "
+        "CRITICAL RULES:\n"
+        "- The source_url MUST be the specific blog post or press article URL "
+        "(e.g. /blog/post-title), NOT the bare homepage (e.g. https://domain.com/). "
+        "Never cite the homepage for an event.\n"
+        "- Do NOT invent, guess, or hallucinate events or today's date if no genuine news "
+        "is found on the site. If no qualifying announcement from the last 12 months is found, "
+        "return found=False."
     )
 
     # External domain hop enforcement state
@@ -224,7 +253,12 @@ async def _run_browser_use_agent(
                         external_domains=list(external_domains_seen),
                     )
                     should_stop = True
-                    await agent.stop()
+                    try:
+                        stop_res = agent.stop()
+                        if asyncio.iscoroutine(stop_res):
+                            await stop_res
+                    except Exception:
+                        pass
                     break
 
     agent = Agent(
@@ -267,7 +301,9 @@ async def _run_browser_use_agent(
         # Grounded confidence scoring
         visited_urls = history.urls()
         extracted_text = " ".join(history.extracted_content() or [])
-        confidence = compute_trigger_confidence(output_data, visited_urls, extracted_text)
+        confidence = compute_trigger_confidence(
+            output_data, visited_urls, extracted_text, base_domain=clean_domain
+        )
 
         event = TriggerEvent(
             found=output_data.found,

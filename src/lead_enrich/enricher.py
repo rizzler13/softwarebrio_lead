@@ -82,19 +82,22 @@ def _is_matching_linkedin_profile(name: str, title: str, url: str) -> bool:
     return any(p in slug for p in name_parts) or any(p in title_lower for p in name_parts)
 
 
-def _parse_linkedin_title(title: str, url: str, domain: str) -> TeamMember | None:
+def _parse_linkedin_title(
+    title: str, url: str, domain: str, content: str = ""
+) -> TeamMember | None:
     """
-    Extract and validate name, role, and company alignment from LinkedIn search result titles.
-    Filters out customer quotes, unrelated businesses, and non-executive roles.
+    Extract and validate name, role, and company alignment from LinkedIn search results.
+    Checks title headline and snippet content, filtering out quotes and unrelated businesses.
     """
     if not title or not url or "linkedin.com/in/" not in url:
         return None
 
     brand = domain.split(".")[0].lower()
     title_lower = title.lower()
+    content_lower = content.lower()
 
-    # Target company brand must be mentioned in the title
-    if brand not in title_lower:
+    # Target company brand must be mentioned in the title or snippet content
+    if brand not in title_lower and brand not in content_lower:
         return None
 
     # Reject compound brands sharing the word (e.g. 'Hue & Stripe', 'Foggy Notion')
@@ -103,22 +106,63 @@ def _parse_linkedin_title(title: str, url: str, domain: str) -> TeamMember | Non
 
     cleaned = title.replace(" - LinkedIn", "").replace(" | LinkedIn", "").strip()
     parts = re.split(r"\s+[-–|]\s+", cleaned)
-    if len(parts) < 2:
+    if not parts or not parts[0].strip():
         return None
 
     name = parts[0].strip()
-    role = parts[1].strip()
+    if len(parts) >= 3 and EXEC_ROLE_PATTERN.search(parts[2]):
+        candidate_comp = parts[1].strip()
+        role = parts[2].strip()
+        if not _is_matching_company(candidate_comp, brand):
+            return None
+    elif len(parts) > 1:
+        role = parts[1].strip()
+    else:
+        role = ""
 
-    # Must look like a real name (at least 2 words, no generic words)
+    # Must look like a real name (at least 2 words, no generic or corporate words)
     name_tokens = name.split()
     if len(name_tokens) < 2 or any(
-        tok.lower() in ("profile", "jobs", "overview", "experience", "inc", "ltd", "consultants")
+        tok.lower()
+        in (
+            "profile",
+            "jobs",
+            "overview",
+            "experience",
+            "inc",
+            "ltd",
+            "consultants",
+            "posts",
+            "activity",
+        )
         for tok in name_tokens
     ):
         return None
 
-    # True executive/leadership keywords (word boundary prevents matching 'director' as 'cto')
+    # If role is missing from headline, infer from matching executive pattern in title or content
+    if not role:
+        match = EXEC_ROLE_PATTERN.search(title_lower) or EXEC_ROLE_PATTERN.search(content_lower)
+        if match:
+            role = f"{match.group(0).capitalize()} at {brand.capitalize()}"
+        else:
+            return None
+
+    # True executive/leadership keywords required in the role
     if not EXEC_ROLE_PATTERN.search(role):
+        return None
+
+    # Role or company affiliation must specifically tie to the target brand
+    # (prevents matching someone whose surname happens to be the brand name, e.g. Diankha Linear)
+    has_brand_affiliation = (
+        brand in role.lower()
+        or f"at {brand}" in content_lower
+        or f"@{brand}" in content_lower
+        or f"of {brand}" in content_lower
+        or f"{brand} ceo" in content_lower
+        or f"{brand} founder" in content_lower
+        or f"{brand} president" in content_lower
+    )
+    if not has_brand_affiliation:
         return None
 
     # Role cannot simply be a corporate name (e.g. 'Retool Inc.')
@@ -149,68 +193,126 @@ def _parse_linkedin_title(title: str, url: str, domain: str) -> TeamMember | Non
 
 async def _lookup_founders_external(domain: str, settings: Settings, client) -> list[TeamMember]:
     """Search for company founders / executives on LinkedIn if absent from the website."""
-    # Search with the exact domain to ensure results belong strictly to this company
-    query = f'"{domain}" (founder OR CEO OR "co-founder") site:linkedin.com/in'
+    clean_name = domain.split(".")[0].capitalize()
+    brand = domain.split(".")[0].lower()
 
     try:
-        results = await client.search(query=query, max_results=5, search_depth="basic")
+        # 1. Primary query targeting LinkedIn profile pages
+        results = await client.search(
+            query=f"{clean_name} founder CEO president linkedin profile",
+            include_domains=["linkedin.com"],
+            max_results=5,
+            search_depth="basic",
+        )
 
-        # 1. Try zero-latency title parsing first with strict company validation
+        all_results = list(results.get("results", []))
         heuristic_leaders = []
-        for r in results.get("results", []):
+        seen_names = set()
+        for r in all_results:
             url = r.get("url", "")
             title = r.get("title", "")
-            parsed = _parse_linkedin_title(title, url, domain)
-            if parsed:
+            content = r.get("content", "")
+            parsed = _parse_linkedin_title(title, url, domain, content=content)
+            if parsed and parsed.name.lower() not in seen_names:
+                seen_names.add(parsed.name.lower())
                 heuristic_leaders.append(parsed)
                 if len(heuristic_leaders) >= 3:
+                    return heuristic_leaders
+
+        # 2. Fallback query without domain restriction for high-recall profile discovery
+        fallback_query = f"{clean_name} founder co-founder CEO linkedin in"
+        fb_results = await client.search(query=fallback_query, max_results=5, search_depth="basic")
+        fb_list = list(fb_results.get("results", []))
+        all_results.extend(fb_list)
+        for r in fb_list:
+            url = r.get("url", "")
+            title = r.get("title", "")
+            content = r.get("content", "")
+            parsed = _parse_linkedin_title(title, url, domain, content=content)
+            if parsed and parsed.name.lower() not in seen_names:
+                seen_names.add(parsed.name.lower())
+                heuristic_leaders.append(parsed)
+                if len(heuristic_leaders) >= 3:
+                    return heuristic_leaders
+
+        # 3. Contextual snippet discovery if heuristic title parsing found nothing
+        # (e.g. Airtable / Clerk)
+        stop_words = {
+            "and",
+            "the",
+            "a",
+            "an",
+            "is",
+            "co",
+            "for",
+            "with",
+            "from",
+            "report",
+            "post",
+            "activity",
+            "ceo",
+            "founder",
+            "join",
+            "our",
+        }
+        p1 = re.compile(
+            rf"\b(?:{brand}\.com|{brand})\s+(?:co-?founder\s*(?:&|and)\s*ceo|ceo|founder|co-founder|president)\s+([A-Z][a-z]{{1,15}}\s+[A-Z][a-z]{{1,15}})\b",
+            re.IGNORECASE,
+        )
+        p2 = re.compile(
+            rf"\b([A-Z][a-z]{{1,15}}\s+[A-Z][a-z]{{1,15}})\b(?:,\s+|\s+is\s+(?:the\s+)?)(?:co-?founder\s*(?:&|and)\s*ceo|ceo\s*(?:&|and)\s*co-?founder|ceo|founder|co-founder|president)\s+(?:of|at|@)\s+(?:{brand}\.com|{brand})",
+            re.IGNORECASE,
+        )
+
+        discovered: dict[str, str] = {}
+        for r in all_results:
+            text = f"{r.get('title', '')} {r.get('content', '')}"
+            for m in p1.finditer(text):
+                cand = m.group(1).strip()
+                tokens = cand.split()
+                if len(tokens) == 2 and not any(t.lower() in stop_words for t in tokens):
+                    discovered[cand.lower()] = cand
+            for m in p2.finditer(text):
+                cand = m.group(1).strip()
+                tokens = cand.split()
+                if len(tokens) == 2 and not any(t.lower() in stop_words for t in tokens):
+                    discovered[cand.lower()] = cand
+
+        for norm_name, full_name in discovered.items():
+            found_url = None
+            for r in all_results:
+                u = r.get("url", "")
+                t = r.get("title", "")
+                if "linkedin.com/in/" in u and _is_matching_linkedin_profile(full_name, t, u):
+                    found_url = u
+                    break
+            if not found_url:
+                sub_res = await client.search(
+                    query=f'"{full_name}" site:linkedin.com/in {brand}',
+                    max_results=2,
+                    search_depth="basic",
+                )
+                for sr in sub_res.get("results", []):
+                    su = sr.get("url", "")
+                    st = sr.get("title", "")
+                    if "linkedin.com/in/" in su and _is_matching_linkedin_profile(
+                        full_name, st, su
+                    ):
+                        found_url = su
+                        break
+            if found_url and norm_name not in seen_names:
+                seen_names.add(norm_name)
+                heuristic_leaders.append(
+                    TeamMember(
+                        name=full_name,
+                        role=f"Co-Founder & CEO at {brand.capitalize()}",
+                        linkedin_url=found_url,
+                    )
+                )
+                if len(heuristic_leaders) >= 2:
                     break
 
-        if heuristic_leaders:
-            return heuristic_leaders
-
-        # 2. Adaptive fallback to LLM only if heuristic found nothing
-        snippets = []
-        for r in results.get("results", []):
-            url = r.get("url", "")
-            if "linkedin.com/in/" in url:
-                title = r.get("title", "")
-                content = r.get("content", "")[:250]
-                snippets.append(f"Title: {title}\nURL: {url}\nSnippet: {content}")
-
-        if not snippets:
-            return []
-
-        import instructor
-        from groq import AsyncGroq
-
-        groq_client = AsyncGroq(api_key=settings.groq_api_key)
-        inst_client = instructor.from_groq(groq_client, mode=instructor.Mode.TOOLS)
-
-        system_msg = (
-            f"Extract the real founders or top C-level executives of the company at {domain} "
-            "from these search results. Only include legitimate leaders of this exact company. "
-            "Reject unrelated companies, customers, or consultants. Max 2 people."
-        )
-
-        response = await inst_client.chat.completions.create(
-            model=settings.llm_model,
-            messages=[
-                {"role": "system", "content": system_msg},
-                {
-                    "role": "user",
-                    "content": f"Company: {domain}\n\nSearch results:\n" + "\n\n".join(snippets),
-                },
-            ],
-            response_model=_DiscoveredLeaders,
-            max_tokens=450,
-        )
-
-        valid_leaders = []
-        for m in response.leaders:
-            if m.linkedin_url and _is_matching_linkedin_profile(m.name, m.role, m.linkedin_url):
-                valid_leaders.append(m)
-        return valid_leaders[:2]
+        return heuristic_leaders
 
     except Exception as exc:
         log.warning("external_founder_lookup_failed", domain=domain, error=str(exc))

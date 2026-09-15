@@ -1,6 +1,6 @@
 # Lead Intelligence & Enrichment Engine
 
-An autonomous, concurrent web intelligence pipeline that extracts structured B2B company data, leadership profiles, verified contact emails, and trigger events from public company websites.
+An autonomous, concurrent web intelligence pipeline that extracts structured company data, leadership profiles, verified contact emails, and trigger events from public company websites.
 
 Built with Python 3.11+, Playwright, Instructor, and Pydantic.
 
@@ -15,7 +15,7 @@ While the initial assignment called for extracting data from 3 target domains, w
 - **Zero-Crash Resilience**: Fault-isolated architecture ensures network hangs, rate limits, or browser crashes on one domain never fail the batch. Every domain produces a typed `DomainResult`.
 - **Ground-Truth Verification**:
   - Eliminates testimonial quotes being misclassified as executives (e.g. customer quotes on Notion).
-  - Corporate brand disambiguation rejects unrelated companies sharing names (e.g. *Hue & Stripe*, *Linear Capital*, *CLERK Consultants*).
+  - Corporate brand disambiguation rejects unrelated companies sharing names 
   - Name-to-LinkedIn slug verification ensures profile URLs strictly belong to the extracted person.
   - Email boundary sanitization eliminates trailing artifacts and documentation placeholders (`example.com`, `bad_actor`).
 - **Grounded Confidence Scoring**: Replaced self-inflated LLM ratings with auditable signal-based scoring rooted in verified evidence.
@@ -68,16 +68,7 @@ This generates:
 - `output/runs/run_demo.csv` — Flat spreadsheet ready for CRM or SDR ingestion.
 - `output/runs/manifest_demo.json` — Operational telemetry and token cost audit.
 
-### Open Outputs in VS Code from Terminal
 
-Open both the JSON and CSV output tabs directly in VS Code:
-```bash
-code output/runs/run_demo.json output/runs/run_demo.csv
-```
-
-Or open them automatically upon run completion using the `--open` flag:
-```bash
-python -m lead_enrich --domains "linear.app,railway.app,resend.com" --name demo --open
 ```
 
 ### Quick Reference Commands

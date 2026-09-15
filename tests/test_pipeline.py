@@ -135,3 +135,61 @@ class TestCLIArgs:
             assert args.domains == "linear.app"
             assert args.name == "demo_run"
             assert args.open is True
+
+
+class TestLinkedInLeaderParsing:
+    """Verify robust parsing and validation of LinkedIn executive profiles."""
+
+    def test_clean_executive_title(self):
+        from lead_enrich.enricher import _parse_linkedin_title
+
+        # Direct 2-part and 3-part titles
+        p1 = _parse_linkedin_title(
+            "Karri Saarinen - Co-Founder, CEO at Linear - LinkedIn",
+            "https://www.linkedin.com/in/karrisaarinen",
+            "linear.app",
+        )
+        assert p1 is not None
+        assert p1.name == "Karri Saarinen"
+        assert "Linear" in p1.role
+
+        p2 = _parse_linkedin_title(
+            "Patrick Collison - Stripe CEO - LinkedIn",
+            "https://www.linkedin.com/in/patrickcollison",
+            "stripe.com",
+        )
+        assert p2 is not None
+        assert p2.name == "Patrick Collison"
+        assert p2.role == "Stripe CEO"
+
+    def test_unrelated_company_in_3part_title_rejected(self):
+        from lead_enrich.enricher import _parse_linkedin_title
+
+        # Connected Railway is not Railway
+        p = _parse_linkedin_title(
+            "Daniel Merritt - Connected Railway - Founder & CEO",
+            "https://www.linkedin.com/in/daniel-merritt",
+            "railway.app",
+        )
+        assert p is None
+
+    def test_non_executive_role_rejected(self):
+        from lead_enrich.enricher import _parse_linkedin_title
+
+        p = _parse_linkedin_title(
+            "Ben Green - Airtable Partner of the Year - LinkedIn",
+            "https://www.linkedin.com/in/benjamingreen",
+            "airtable.com",
+        )
+        assert p is None
+
+    def test_surname_without_affiliation_rejected(self):
+        from lead_enrich.enricher import _parse_linkedin_title
+
+        # 'Linear' appears only as a surname, no company affiliation
+        p = _parse_linkedin_title(
+            "Diankha Linear - CEO - LinkedIn",
+            "https://www.linkedin.com/in/diankha-linear",
+            "linear.app",
+        )
+        assert p is None

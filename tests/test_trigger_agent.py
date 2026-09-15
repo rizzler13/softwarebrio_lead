@@ -82,8 +82,48 @@ class TestTriggerConfidenceScorer:
         extracted_text = (
             "We are thrilled to announce our Series B funding round led by Sequoia Capital."
         )
-        score = compute_trigger_confidence(item, visited, extracted_text)
+        score = compute_trigger_confidence(item, visited, extracted_text, base_domain="example.com")
         assert score >= 0.80
+
+    def test_bare_homepage_citation_capped_at_0_3(self):
+        """Bare homepage citing a specific funding round must be hard-capped at <= 0.30."""
+        item = TriggerEventOutput(
+            found=True,
+            summary="Clerk raises $50m Series C",
+            source_url="https://clerk.com/",
+            estimated_date="2026-09-13",
+        )
+        visited = ["https://clerk.com/"]
+        extracted_text = "Clerk authentication and user management platform for React and Next.js"
+        score = compute_trigger_confidence(item, visited, extracted_text, base_domain="clerk.com")
+        assert score <= 0.30
+
+    def test_uncorroborated_text_capped_at_0_3(self):
+        """Visited URL whose text does not mention the claimed event must be capped at <= 0.30."""
+        item = TriggerEventOutput(
+            found=True,
+            summary="Acquired Acme Corp for $100M in cash",
+            source_url="https://example.com/news/article",
+            estimated_date="2026-01",
+        )
+        visited = ["https://example.com/news/article"]
+        extracted_text = "Our winter release introduces new dark mode and faster dashboard filters."
+        score = compute_trigger_confidence(item, visited, extracted_text, base_domain="example.com")
+        assert score <= 0.30
+
+    def test_substring_word_boundary_does_not_false_match(self):
+        """Page words like 'fundamental' or 'prevention' must not match 'fund' or 'event'."""
+        item = TriggerEventOutput(
+            found=True,
+            summary="Raised Series C funding round",
+            source_url="https://example.com/news/article",
+            estimated_date="2026-01",
+        )
+        visited = ["https://example.com/news/article"]
+        # Words contain substrings of summary keywords ('fund' in fundamental, 'seri' in serialize)
+        extracted_text = "Fundamental serialization improvements across our platform services."
+        score = compute_trigger_confidence(item, visited, extracted_text, base_domain="example.com")
+        assert score <= 0.30
 
 
 class TestTriggerAgentDegradation:
