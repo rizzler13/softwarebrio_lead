@@ -17,7 +17,7 @@ Most lead scraping tools fall into one of two extremes:
 
 I built this pipeline around a **hybrid, two-tier architecture**:
 - **The Fast Path (Deterministic & Fast)**: Uses headless Playwright with aggressive asset blocking (dropping images, fonts, and stylesheets) to crawl core navigation and footer links. It strips DOM noise, budgets tokens tightly, and uses Instructor with Groq (`openai/gpt-oss-120b`) for validated, typed Pydantic extraction. Then, it uses Tavily to cross-reference and verify executive LinkedIn profiles.
-- **The Deep Path (Agentic & Autonomous)**: When run with `--agentic`, it hands off to a bounded `browser-use` sub-agent. The agent specifically hunts for genuine trigger events—like recent Series A/B funding rounds, leadership changes, or major product launches from the last 12 months—without wasting steps or hallucinating events.
+- **The Deep Path (Agentic & Autonomous)**: When run with `--agentic`, a two-phase trigger discovery kicks in. First, a lightweight HTTP pass scrapes blog/news/press pages with `aiohttp` and scores them using regex heuristics—zero LLM tokens, typically under 5 seconds. Only when that fails to surface a high-confidence event does it escalate to a bounded `browser-use` sub-agent for JavaScript-heavy sites. The agent specifically hunts for genuine trigger events—like recent Series A/B funding rounds, leadership changes, or major product launches from the last 12 months—without wasting steps or hallucinating events. Results are cached per-domain (7-day TTL), so re-runs cost nothing.
 
 ---
 
@@ -26,6 +26,7 @@ I built this pipeline around a **hybrid, two-tier architecture**:
 ### 1. Decoupled Concurrency & Strict Resource Semaphores
 Running multiple browser instances while simultaneously hitting LLM inference endpoints easily leads to resource contention and 429 rate limits.
 - The pipeline isolates domain workers with `asyncio.gather`, but caps concurrent browser pages and LLM calls via dedicated internal semaphores.
+- A centralized `ProviderRouter` tracks token consumption per LLM provider in a sliding 60-second window. When one provider hits its free-tier TPM ceiling, requests automatically fail over to the next available provider—with exponential backoff and jitter to avoid thundering-herd retries. Three consecutive 429s temporarily disable a provider for a 60-second cooldown before re-enabling it.
 - If a target domain has a dead DNS record, times out, or triggers bot mitigation, the failure is trapped in that domain's isolated error boundary. It records a structured `DomainResult` with the failure reason and execution timings, and the rest of the batch completes uninterrupted.
 
 ### 2. Ground-Truth Verification Over Hallucinated Data
@@ -95,9 +96,12 @@ python -m lead_enrich --domains "vapi.ai, supabase.com, postman.com"
 ```
 
 ### Agentic Mode (Autonomous Trigger Discovery)
-Spawns the `browser-use` agent to actively navigate the company's site, hunt down blog/press pages, and extract verified trigger events from the last 12 months:
+Runs a two-phase trigger discovery: fast HTTP scraping first, then a `browser-use` agent fallback for sites that need JavaScript rendering. Cached results are served instantly on re-runs:
 ```bash
 python -m lead_enrich --domains "vapi.ai, supabase.com" --agentic
+
+# Force fresh discovery (bypass the 7-day trigger cache)
+python -m lead_enrich --domains "vapi.ai" --agentic --no-cache
 ```
 
 ### Choosing an LLM Provider for the Trigger Agent
@@ -126,6 +130,7 @@ python -m lead_enrich --domains "vapi.ai, supabase.com" --name demo --open
 | :--- | :---: | :--- |
 | `--domains` | | Comma-separated domains to process (e.g. `"linear.app,stripe.com"`). |
 | `--agentic` | | Enables the autonomous browser agent for trigger event discovery. |
+| `--no-cache` | | Bypasses the trigger event cache and forces fresh discovery. |
 | `--provider` | | Trigger agent LLM: `auto`, `both`, `openrouter`, or `groq`. |
 | `--name` | `-n` | Custom run name identifier (e.g. `--name batch1` $\rightarrow$ `run_batch1.json`). |
 | `--open` | | Automatically opens the generated JSON and CSV in your editor. |
@@ -172,7 +177,8 @@ output/
       "summary": "Announced Linear Asks and new customer support integrations.",
       "source_url": "https://linear.app/blog/linear-asks",
       "estimated_date": "2026-04",
-      "confidence": 0.80
+      "confidence": 0.80,
+      "trigger_phase": "http"
     }
   },
   "token_usage": {
@@ -196,7 +202,7 @@ output/
 
 ## Testing & Quality
 
-The project includes a comprehensive test suite (46 automated tests) covering Pydantic models, DOM preprocessing, LinkedIn title parsing, trigger agent degradation, and confidence scoring:
+The project includes a comprehensive test suite (92 automated tests) covering Pydantic models, DOM preprocessing, LinkedIn title parsing, trigger agent degradation, HTTP-based trigger discovery, rate-limit routing, caching, and confidence scoring:
 
 ```bash
 # Run tests
@@ -231,8 +237,9 @@ ruff format --check src/ tests/
                 │
         ┌───────┴────────────────────────┐
         ▼ (concurrent)                   ▼ (concurrent, optional)
-   5a. enrich_linkedin()            5b. discover_trigger_event()
-       Tavily search & slug match       Browser-Use agent (bounded budget)
+   5a. enrich_linkedin()            5b. trigger discovery (two-phase)
+       Tavily search & slug match       Phase 1: HTTP regex (0 tokens)
+                                        Phase 2: Browser-Use (if needed)
         └───────┬────────────────────────┘
                 │
    6. compute_confidence()  Grounded multi-signal confidence scoring
