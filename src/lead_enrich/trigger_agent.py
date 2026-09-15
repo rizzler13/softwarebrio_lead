@@ -200,16 +200,36 @@ def compute_trigger_confidence(
 async def _run_browser_use_agent(
     clean_domain: str,
     settings: Settings,
+    verbose: bool = False,
 ) -> tuple[TriggerEvent | None, str]:
     """Execute the Browser-Use agent with step and external domain constraints."""
-    from browser_use import Agent, BrowserProfile, BrowserSession
-    from browser_use.llm import ChatOpenRouter
+    import logging
 
-    # 1. Initialize OpenRouter LLM for Browser-Use
-    llm = ChatOpenRouter(
-        model=settings.openrouter_model,
-        api_key=settings.openrouter_api_key,
-    )
+    # Suppress verbose Browser-Use log spam unless explicitly requested
+    target_level = logging.INFO if verbose else logging.WARNING
+    for log_name in ["browser_use", "Agent", "BrowserSession", "tools", "service"]:
+        logging.getLogger(log_name).setLevel(target_level)
+
+    from browser_use import Agent, BrowserProfile, BrowserSession
+
+    # 1. Initialize LLM: use OpenRouter if configured, otherwise Groq
+    if settings.openrouter_api_key and settings.openrouter_api_key.strip():
+        from browser_use.llm import ChatOpenRouter
+
+        llm = ChatOpenRouter(
+            model=settings.openrouter_model,
+            api_key=settings.openrouter_api_key,
+        )
+    elif settings.groq_api_key and settings.groq_api_key.strip():
+        from browser_use.llm import ChatGroq
+
+        llm = ChatGroq(
+            model=settings.groq_trigger_model,
+            api_key=settings.groq_api_key,
+        )
+    else:
+        log.info("trigger_agent_skipped_no_key", domain=clean_domain)
+        return None, "skipped"
 
     # 2. Configure headless browser session
     profile = BrowserProfile(
@@ -220,18 +240,15 @@ async def _run_browser_use_agent(
     session = BrowserSession(browser_profile=profile)
 
     task_prompt = (
-        f"Starting from https://{clean_domain}, find the single most recent, genuine company "
-        "news item (funding round, leadership change, or major product announcement) "
-        "published within roughly the last 12 months. Check the homepage navigation or footer "
-        "for News, Blog, Press, or Changelog links. Navigate to the exact announcement page, "
-        "identify the headline, date, and exact URL of that announcement article, and call done. "
-        "CRITICAL RULES:\n"
-        "- The source_url MUST be the specific blog post or press article URL "
-        "(e.g. /blog/post-title), NOT the bare homepage (e.g. https://domain.com/). "
-        "Never cite the homepage for an event.\n"
-        "- Do NOT invent, guess, or hallucinate events or today's date if no genuine news "
-        "is found on the site. If no qualifying announcement from the last 12 months is found, "
-        "return found=False."
+        f"Find the single most recent company news item (funding round, leadership change, "
+        f"or major product announcement) from {clean_domain} published in the last 12 months. "
+        "Check the homepage navigation or footer for Changelog, Blog, News, or Press links. "
+        "Navigate to the exact announcement page, identify the headline, date, and exact URL, "
+        "and call done. "
+        "RULES:\n"
+        "- The source_url must be the specific blog post or press article URL.\n"
+        "- If no Changelog, Blog, or News section exists or no qualifying announcement is found, "
+        "call done immediately with found=False. Do NOT search external engines or guess."
     )
 
     # External domain hop enforcement state
@@ -267,12 +284,13 @@ async def _run_browser_use_agent(
         browser_session=session,
         use_vision=False,
         output_model_schema=TriggerEventOutput,
+        initial_actions=[{"navigate": {"url": f"https://{clean_domain}", "new_tab": False}}],
         max_actions_per_step=1,
         register_should_stop_callback=_should_stop_callback,
     )
 
     try:
-        # Enforce max 8 actions hard limit in code
+        # Enforce max actions hard limit in code
         history = await agent.run(max_steps=settings.trigger_max_steps, on_step_end=_on_step_end)
 
         # Retrieve structured output from Browser-Use
@@ -325,6 +343,7 @@ async def _run_browser_use_agent(
 async def discover_trigger_event(
     domain: str,
     settings: Settings,
+    verbose: bool = False,
 ) -> tuple[TriggerEvent | None, str, float]:
     """
     Discover recent trigger events for a domain using Browser-Use.
@@ -336,14 +355,18 @@ async def discover_trigger_event(
     clean_domain = _extract_host(domain) or domain
     start_time = time.monotonic()
 
-    # Graceful degradation if OpenRouter API key is not configured
-    if not settings.openrouter_api_key or not settings.openrouter_api_key.strip():
+    # Graceful degradation if neither OpenRouter nor Groq API key is configured
+    has_key = bool(
+        (settings.openrouter_api_key and settings.openrouter_api_key.strip())
+        or (settings.groq_api_key and settings.groq_api_key.strip())
+    )
+    if not has_key:
         log.info("trigger_agent_skipped_no_key", domain=clean_domain)
         return None, "skipped", 0.0
 
     try:
         event, status = await asyncio.wait_for(
-            _run_browser_use_agent(clean_domain, settings),
+            _run_browser_use_agent(clean_domain, settings, verbose=verbose),
             timeout=settings.trigger_stage_timeout_s,
         )
         duration = round(time.monotonic() - start_time, 2)

@@ -26,12 +26,15 @@ def print_cost_report(results: list[DomainResult]) -> None:
         collapse_padding=True,
     )
 
+    has_trigger = any(r.timings.trigger_s > 0 for r in results)
+
     table.add_column("domain", no_wrap=True)
     table.add_column("status", no_wrap=True)
     table.add_column("fetch", justify="right", no_wrap=True)
     table.add_column("llm", justify="right", no_wrap=True)
     table.add_column("enrich", justify="right", no_wrap=True)
-    table.add_column("trigger", justify="right", no_wrap=True)
+    if has_trigger:
+        table.add_column("trigger", justify="right", no_wrap=True)
     table.add_column("total", justify="right", no_wrap=True)
     table.add_column("tokens (p/c/t)", justify="right", no_wrap=True)
     table.add_column("cost", justify="right", no_wrap=True)
@@ -55,17 +58,23 @@ def print_cost_report(results: list[DomainResult]) -> None:
             else "—"
         )
 
-        table.add_row(
+        row = [
             result.domain,
             status_str,
             f"{timings.fetch_s:.2f}s" if timings.fetch_s > 0 else "—",
             f"{timings.llm_s:.2f}s" if timings.llm_s > 0 else "—",
             f"{timings.enrich_s:.2f}s" if timings.enrich_s > 0 else "—",
-            f"{timings.trigger_s:.2f}s" if timings.trigger_s > 0 else "—",
-            f"{timings.total_s:.2f}s",
-            token_str,
-            f"${usage.estimated_cost_usd:.4f}",
+        ]
+        if has_trigger:
+            row.append(f"{timings.trigger_s:.2f}s" if timings.trigger_s > 0 else "—")
+        row.extend(
+            [
+                f"{timings.total_s:.2f}s",
+                token_str,
+                f"${usage.estimated_cost_usd:.4f}",
+            ]
         )
+        table.add_row(*row)
 
         total_prompt += usage.prompt_tokens
         total_completion += usage.completion_tokens
@@ -74,18 +83,11 @@ def print_cost_report(results: list[DomainResult]) -> None:
     total_tokens_str = f"{total_prompt}/{total_completion}/{total_prompt + total_completion}"
 
     table.add_section()
-    table.add_row(
-        "total",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        total_tokens_str,
-        f"${total_cost:.4f}",
-        style="bold",
-    )
+    tot_row = ["total", "", "", "", ""]
+    if has_trigger:
+        tot_row.append("")
+    tot_row.extend(["", total_tokens_str, f"${total_cost:.4f}"])
+    table.add_row(*tot_row, style="bold")
 
     console.print()
     console.print(table)

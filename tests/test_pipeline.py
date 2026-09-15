@@ -125,16 +125,29 @@ class TestCLIArgs:
             assert args.domains == "linear.app,railway.app"
             assert args.name is None
             assert args.open is False
+            assert args.agentic is False
+            assert args.verbose is False
 
     def test_custom_name_and_open_flags(self):
         with patch(
             "sys.argv",
-            ["lead_enrich", "--domains", "linear.app", "--name", "demo_run", "--open"],
+            [
+                "lead_enrich",
+                "--domains",
+                "linear.app",
+                "--name",
+                "demo_run",
+                "--open",
+                "--agentic",
+                "-v",
+            ],
         ):
             args = parse_args()
             assert args.domains == "linear.app"
             assert args.name == "demo_run"
             assert args.open is True
+            assert args.agentic is True
+            assert args.verbose is True
 
 
 class TestLinkedInLeaderParsing:

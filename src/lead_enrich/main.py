@@ -67,21 +67,50 @@ class SafeStream:
             pass
 
 
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="%H:%M:%S"),
-        structlog.dev.ConsoleRenderer(colors=False),
-    ],
-    logger_factory=structlog.PrintLoggerFactory(file=SafeStream(sys.stdout)),
-)
+def configure_logging(verbose: bool = False) -> None:
+    """Configure structlog and standard logging levels based on verbosity."""
+    import logging
 
+    log_level = logging.INFO if verbose else logging.WARNING
+    logging.basicConfig(level=log_level)
+
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="%H:%M:%S"),
+            structlog.dev.ConsoleRenderer(colors=False),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(log_level),
+        logger_factory=structlog.PrintLoggerFactory(file=SafeStream(sys.stdout)),
+    )
+
+    # Suppress verbose external loggers unless requested
+    ext_level = logging.INFO if verbose else logging.WARNING
+    for log_name in [
+        "browser_use",
+        "Agent",
+        "BrowserSession",
+        "tools",
+        "service",
+        "playwright",
+        "cdp_use",
+    ]:
+        logging.getLogger(log_name).setLevel(ext_level)
+
+
+configure_logging(verbose=False)
 log = structlog.get_logger()
 console = Console(highlight=False)
 
 
-async def process_domain(domain: str, settings: Settings, browser=None) -> DomainResult:
+async def process_domain(
+    domain: str,
+    settings: Settings,
+    browser=None,
+    agentic: bool = False,
+    verbose: bool = False,
+) -> DomainResult:
     """
     Full pipeline for a single domain. Every failure path returns a
     DomainResult — this function never raises.
@@ -160,7 +189,7 @@ async def process_domain(domain: str, settings: Settings, browser=None) -> Domai
         llm_emails = set(intel.contact_emails)
         intel.contact_emails = sorted(browser_emails | llm_emails)
 
-        # Stage 5: Enrich with LinkedIn search and discover trigger event concurrently
+        # Stage 5: Enrich with LinkedIn search (and discover trigger event if agentic)
         async def _timed_enrich():
             t0 = time.monotonic()
             enriched_intel = await enrich_linkedin_urls(intel, clean_domain, settings)
@@ -168,23 +197,25 @@ async def process_domain(domain: str, settings: Settings, browser=None) -> Domai
             return enriched_intel, duration
 
         enrich_task = asyncio.create_task(_timed_enrich())
-        trigger_task = asyncio.create_task(discover_trigger_event(clean_domain, settings))
 
-        (intel, enrich_s), (trigger_event, trigger_status, trigger_duration) = await asyncio.gather(
-            enrich_task, trigger_task
-        )
-        result.timings.enrich_s = enrich_s
-        result.timings.trigger_s = round(trigger_duration, 2)
-        result.trigger_event_status = trigger_status
-        if intel:
-            intel.trigger_event = trigger_event
-        log.info(
-            "stage_enrich_complete",
-            domain=clean_domain,
-            enrich_duration_s=result.timings.enrich_s,
-            trigger_duration_s=result.timings.trigger_s,
-            trigger_found=trigger_event.found if trigger_event else False,
-        )
+        if agentic:
+            trigger_task = asyncio.create_task(
+                discover_trigger_event(clean_domain, settings, verbose=verbose)
+            )
+            gather_res = await asyncio.gather(enrich_task, trigger_task)
+            (intel, enrich_s), (trigger_event, trigger_status, trigger_duration) = gather_res
+            result.timings.enrich_s = enrich_s
+            result.timings.trigger_s = round(trigger_duration, 2)
+            result.trigger_event_status = trigger_status
+            if intel:
+                intel.trigger_event = trigger_event
+        else:
+            intel, enrich_s = await enrich_task
+            result.timings.enrich_s = enrich_s
+            result.timings.trigger_s = 0.0
+            result.trigger_event_status = "disabled"
+            if intel:
+                intel.trigger_event = None
 
         # Stage 6: Compute blended confidence score
         intel.confidence_score = compute_confidence(intel)
@@ -212,7 +243,12 @@ async def process_domain(domain: str, settings: Settings, browser=None) -> Domai
     return result
 
 
-async def run_pipeline(domains: list[str], settings: Settings) -> list[DomainResult]:
+async def run_pipeline(
+    domains: list[str],
+    settings: Settings,
+    agentic: bool = False,
+    verbose: bool = False,
+) -> list[DomainResult]:
     """
     Process multiple domains concurrently with a semaphore and per-domain timeouts.
 
@@ -240,22 +276,47 @@ async def run_pipeline(domains: list[str], settings: Settings) -> list[DomainRes
         async def _bounded(domain: str) -> DomainResult:
             async with semaphore:
                 try:
-                    return await asyncio.wait_for(
-                        process_domain(domain, settings, browser=browser),
+                    res = await asyncio.wait_for(
+                        process_domain(
+                            domain,
+                            settings,
+                            browser=browser,
+                            agentic=agentic,
+                            verbose=verbose,
+                        ),
                         timeout=settings.domain_timeout_s,
                     )
                 except TimeoutError:
-                    return DomainResult(
+                    res = DomainResult(
                         domain=domain,
                         status=ProcessingStatus.FAILED,
                         error_reason=f"Hard timeout ({settings.domain_timeout_s}s)",
                     )
                 except Exception as exc:
-                    return DomainResult(
+                    res = DomainResult(
                         domain=domain,
                         status=ProcessingStatus.FAILED,
                         error_reason=f"Unhandled: {type(exc).__name__}: {str(exc)}",
                     )
+
+                if not verbose:
+                    if res.status == ProcessingStatus.SUCCESS:
+                        leader = (
+                            res.intel.key_team_members[0].name
+                            if res.intel and res.intel.key_team_members
+                            else ""
+                        )
+                        leader_str = f" · {leader}" if leader else ""
+                        dur = f"{res.timings.total_s:.1f}s"
+                        console.print(f"  ok    {domain:<16} ({dur}){leader_str}")
+                    elif res.status == ProcessingStatus.PARTIAL:
+                        dur = f"{res.timings.total_s:.1f}s"
+                        console.print(f"  part  {domain:<16} ({dur})")
+                    else:
+                        dur = f"{res.timings.total_s:.1f}s"
+                        err = res.error_reason[:40]
+                        console.print(f"  fail  {domain:<16} ({dur}) · {err}")
+                return res
 
         results = await asyncio.gather(*[_bounded(d) for d in clean_domains])
         await browser.close()
@@ -275,6 +336,17 @@ def parse_args() -> argparse.Namespace:
         help='Comma-separated list of domains, e.g. "notion.com,stripe.com,linear.app"',
     )
     parser.add_argument(
+        "--agentic",
+        action="store_true",
+        help="Enable autonomous Browser-Use agent for trigger event discovery",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose action-by-action logging for debugging agent actions",
+    )
+    parser.add_argument(
         "--name",
         "-n",
         type=str,
@@ -291,6 +363,7 @@ def parse_args() -> argparse.Namespace:
 
 async def main() -> None:
     args = parse_args()
+    configure_logging(verbose=args.verbose)
     domains = [d.strip() for d in args.domains.split(",") if d.strip()]
 
     if not domains:
@@ -298,14 +371,20 @@ async def main() -> None:
         return
 
     settings = load_settings()
+    mode_str = " · [dim]agentic[/dim]" if args.agentic else ""
     console.print(
-        f"\n[bold]lead-enrich[/bold] · {len(domains)} domain(s) "
+        f"\n[bold]lead-enrich[/bold] · {len(domains)} domain(s){mode_str} "
         f"[dim](concurrency={settings.max_concurrent_domains})[/dim]\n"
     )
 
     start = time.monotonic()
 
-    results = await run_pipeline(domains, settings)
+    results = await run_pipeline(
+        domains,
+        settings,
+        agentic=args.agentic,
+        verbose=args.verbose,
+    )
 
     elapsed = round(time.monotonic() - start, 1)
 

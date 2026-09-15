@@ -132,6 +132,7 @@ class TestTriggerAgentDegradation:
     @pytest.mark.asyncio
     async def test_skipped_when_no_api_key(self):
         settings = _make_test_settings(openrouter_key="")
+        settings.groq_api_key = ""
         event, status, duration = await discover_trigger_event("notion.com", settings)
         assert event is None
         assert status == "skipped"

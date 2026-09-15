@@ -44,14 +44,21 @@ cp .env.example .env
 ```
 
 Edit `.env` with your API keys:
-- `GROQ_API_KEY`: Required for LLM extraction (`openai/gpt-oss-120b` via Groq)
-- `TAVILY_API_KEY`: Required for executive LinkedIn search enrichment
-- `OPENROUTER_API_KEY`: Required for agentic trigger event discovery (`openai/gpt-4o-mini`)
+- `GROQ_API_KEY`: Required for LLM extraction and agentic mode (`openai/gpt-oss-120b` / `groq/compound`)
+- `TAVILY_API_KEY`: Optional: used for executive LinkedIn profile discovery
+- `OPENROUTER_API_KEY`: Optional: if present, agentic mode can use `openai/gpt-4o-mini`
 
 ### 3. Run Pipeline
 
 ```bash
+# Core pipeline: fast, deterministic extraction + LinkedIn enrichment
 python -m lead_enrich --domains "linear.app,railway.app,resend.com"
+
+# Agentic mode: enables autonomous Browser-Use agent for trigger event discovery
+python -m lead_enrich --domains "linear.app,railway.app" --agentic
+
+# Verbose mode: watch Browser-Use actions step-by-step for debugging
+python -m lead_enrich --domains "linear.app" --agentic -v
 ```
 
 ---
@@ -61,15 +68,12 @@ python -m lead_enrich --domains "linear.app,railway.app,resend.com"
 ### Name Your Run Output
 Use `--name` (or `-n`) to give your run a clean identifier instead of a default timestamp:
 ```bash
-python -m lead_enrich --domains "linear.app,railway.app,resend.com" --name demo
+python -m lead_enrich --domains "linear.app,railway.app,resend.com" --name demo --open
 ```
 This generates:
 - `output/runs/run_demo.json` — Structured JSON payload with full intelligence, timings, and token metrics.
 - `output/runs/run_demo.csv` — Flat spreadsheet ready for CRM or SDR ingestion.
 - `output/runs/manifest_demo.json` — Operational telemetry and token cost audit.
-
-
-```
 
 ### Quick Reference Commands
 
