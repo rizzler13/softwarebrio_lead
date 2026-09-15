@@ -8,9 +8,9 @@ and final output format all defined here so nothing drifts.
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # ---------------------------------------------------------------------------
 # Internal data passed between pipeline stages
@@ -26,6 +26,28 @@ class PageContent(BaseModel):
     meta_description: str = ""
     status_code: int = 200
     error: str = ""
+
+
+class TeamMember(BaseModel):
+    """A person found on the company's public pages."""
+
+    name: str = Field("", description="Full name of the executive or founder.")
+    full_name: str | None = Field(None, description="Optional full name field.", exclude=True)
+    role: str = Field("", description="Job title or executive role.")
+    linkedin_url: str | None = Field(None, description="LinkedIn profile URL.")
+
+    model_config = {
+        "populate_by_name": True,
+        "extra": "ignore",
+    }
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_full_name(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("name") and data.get("full_name"):
+                data["name"] = data["full_name"]
+        return data
 
 
 # ---------------------------------------------------------------------------
@@ -49,12 +71,7 @@ class TriggerEvent(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class TeamMember(BaseModel):
-    """A person found on the company's public pages."""
 
-    name: str
-    role: str = ""
-    linkedin_url: str | None = None
 
 
 class CompanyIntel(BaseModel):

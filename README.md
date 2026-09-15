@@ -45,7 +45,7 @@ cp .env.example .env
 
 Edit `.env` with your API keys:
 - `GROQ_API_KEY`: Required for LLM extraction and agentic mode (`openai/gpt-oss-120b` / `groq/compound`)
-- `TAVILY_API_KEY`: Optional: used for executive LinkedIn profile discovery
+- `TAVILY_API_KEY`: used for executive LinkedIn profile discovery
 - `OPENROUTER_API_KEY`: Optional: if present, agentic mode can use `openai/gpt-4o-mini`
 
 ### 3. Run Pipeline
@@ -57,8 +57,7 @@ python -m lead_enrich --domains "linear.app,railway.app,resend.com"
 # Agentic mode: enables autonomous Browser-Use agent for trigger event discovery
 python -m lead_enrich --domains "linear.app,railway.app" --agentic
 
-# Verbose mode: watch Browser-Use actions step-by-step for debugging
-python -m lead_enrich --domains "linear.app" --agentic -v
+
 ```
 
 ---

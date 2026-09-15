@@ -109,6 +109,7 @@ async def process_domain(
     settings: Settings,
     browser=None,
     agentic: bool = False,
+    provider: str = "both",
     verbose: bool = False,
 ) -> DomainResult:
     """
@@ -200,7 +201,7 @@ async def process_domain(
 
         if agentic:
             trigger_task = asyncio.create_task(
-                discover_trigger_event(clean_domain, settings, verbose=verbose)
+                discover_trigger_event(clean_domain, settings, provider=provider, verbose=verbose)
             )
             gather_res = await asyncio.gather(enrich_task, trigger_task)
             (intel, enrich_s), (trigger_event, trigger_status, trigger_duration) = gather_res
@@ -247,6 +248,7 @@ async def run_pipeline(
     domains: list[str],
     settings: Settings,
     agentic: bool = False,
+    provider: str = "both",
     verbose: bool = False,
 ) -> list[DomainResult]:
     """
@@ -273,6 +275,35 @@ async def run_pipeline(
             args=["--no-sandbox", "--disable-dev-shm-usage"],
         )
 
+        from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
+        active_domains: set[str] = set(clean_domains)
+
+        def _format_active_desc() -> str:
+            if not active_domains:
+                return "[dim]finalizing...[/dim]"
+            domains_list = sorted(active_domains)
+            if len(domains_list) > 3:
+                joined = f"{domains_list[0]}, {domains_list[1]} +{len(domains_list) - 2} more"
+            else:
+                joined = ", ".join(domains_list)
+            return f"[dim]processing: {joined}[/dim]"
+
+        if not verbose:
+            progress = Progress(
+                SpinnerColumn(spinner_name="dots"),
+                TextColumn("{task.description}"),
+                TextColumn("[dim]({task.completed}/{task.total})[/dim]"),
+                TimeElapsedColumn(),
+                console=console,
+                transient=True,
+            )
+            progress.start()
+            task_id = progress.add_task(_format_active_desc(), total=len(clean_domains))
+        else:
+            progress = None
+            task_id = None
+
         async def _bounded(domain: str) -> DomainResult:
             async with semaphore:
                 try:
@@ -282,6 +313,7 @@ async def run_pipeline(
                             settings,
                             browser=browser,
                             agentic=agentic,
+                            provider=provider,
                             verbose=verbose,
                         ),
                         timeout=settings.domain_timeout_s,
@@ -298,27 +330,34 @@ async def run_pipeline(
                         status=ProcessingStatus.FAILED,
                         error_reason=f"Unhandled: {type(exc).__name__}: {str(exc)}",
                     )
+                finally:
+                    if not verbose and progress is not None and task_id is not None:
+                        active_domains.discard(domain)
+                        if res.status == ProcessingStatus.SUCCESS:
+                            leader = (
+                                res.intel.key_team_members[0].name
+                                if res.intel and res.intel.key_team_members
+                                else ""
+                            )
+                            leader_str = f" · {leader}" if leader else ""
+                            dur = f"{res.timings.total_s:.1f}s"
+                            progress.console.print(f"  ok    {domain:<16} ({dur}){leader_str}")
+                        elif res.status == ProcessingStatus.PARTIAL:
+                            dur = f"{res.timings.total_s:.1f}s"
+                            progress.console.print(f"  part  {domain:<16} ({dur})")
+                        else:
+                            dur = f"{res.timings.total_s:.1f}s"
+                            err = res.error_reason[:40]
+                            progress.console.print(f"  fail  {domain:<16} ({dur}) · {err}")
+                        progress.update(task_id, advance=1, description=_format_active_desc())
 
-                if not verbose:
-                    if res.status == ProcessingStatus.SUCCESS:
-                        leader = (
-                            res.intel.key_team_members[0].name
-                            if res.intel and res.intel.key_team_members
-                            else ""
-                        )
-                        leader_str = f" · {leader}" if leader else ""
-                        dur = f"{res.timings.total_s:.1f}s"
-                        console.print(f"  ok    {domain:<16} ({dur}){leader_str}")
-                    elif res.status == ProcessingStatus.PARTIAL:
-                        dur = f"{res.timings.total_s:.1f}s"
-                        console.print(f"  part  {domain:<16} ({dur})")
-                    else:
-                        dur = f"{res.timings.total_s:.1f}s"
-                        err = res.error_reason[:40]
-                        console.print(f"  fail  {domain:<16} ({dur}) · {err}")
                 return res
 
-        results = await asyncio.gather(*[_bounded(d) for d in clean_domains])
+        try:
+            results = await asyncio.gather(*[_bounded(d) for d in clean_domains])
+        finally:
+            if not verbose and progress is not None:
+                progress.stop()
         await browser.close()
 
     return list(results)
@@ -358,6 +397,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Automatically open generated output files in VS Code after completion",
     )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="auto",
+        choices=["auto", "both", "openrouter", "groq"],
+        help=(
+            'LLM provider for trigger agent: "auto" (interactive prompt), '
+            '"both" (OpenRouter + Groq fallback), "openrouter", or "groq"'
+        ),
+    )
     return parser.parse_args()
 
 
@@ -371,6 +420,40 @@ async def main() -> None:
         return
 
     settings = load_settings()
+
+    # Resolve LLM provider for trigger agent
+    provider = args.provider
+    if args.agentic and provider == "auto":
+        has_or = bool(settings.openrouter_api_key and settings.openrouter_api_key.strip())
+        has_groq = bool(settings.groq_api_key and settings.groq_api_key.strip())
+
+        if has_or and has_groq:
+            console.print("[bold]LLM provider for trigger agent:[/bold]")
+            console.print("  [cyan][1][/cyan] OpenRouter (gpt-4o-mini) + Groq fallback")
+            console.print("  [cyan][2][/cyan] Groq only")
+            console.print("  [cyan][3][/cyan] OpenRouter only")
+            try:
+                choice = input("Pick [1/2/3] (default: 1): ").strip()
+            except (EOFError, KeyboardInterrupt):
+                choice = ""
+            provider_map = {"1": "both", "2": "groq", "3": "openrouter", "": "both"}
+            provider = provider_map.get(choice, "both")
+        elif has_or:
+            provider = "openrouter"
+        elif has_groq:
+            provider = "groq"
+        else:
+            provider = "both"  # will gracefully degrade in trigger_agent
+
+        provider_labels = {
+            "both": "OpenRouter + Groq fallback",
+            "openrouter": "OpenRouter only",
+            "groq": "Groq only",
+        }
+        console.print(f"  [dim]→ using {provider_labels.get(provider, provider)}[/dim]\n")
+    elif not args.agentic:
+        provider = "both"  # doesn't matter, trigger agent won't run
+
     mode_str = " · [dim]agentic[/dim]" if args.agentic else ""
     console.print(
         f"\n[bold]lead-enrich[/bold] · {len(domains)} domain(s){mode_str} "
@@ -383,6 +466,7 @@ async def main() -> None:
         domains,
         settings,
         agentic=args.agentic,
+        provider=provider,
         verbose=args.verbose,
     )
 

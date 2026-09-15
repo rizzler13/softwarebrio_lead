@@ -147,6 +147,7 @@ def compute_trigger_confidence(
     path = parsed_src.path.strip("/")
     is_bare_homepage = path in ("", "index.html", "index.htm", "home", "en", "us")
 
+    target_text = extracted_text.lower()
     # Verify that the specific URL was actually navigated to during the run
     src_clean = source_url.rstrip("/")
     was_visited = False
@@ -158,6 +159,10 @@ def compute_trigger_confidence(
         if not is_bare_homepage and (src_clean in u_clean or u_clean in src_clean):
             was_visited = True
             break
+
+    if not was_visited and not is_bare_homepage:
+        if src_clean.lower() in target_text:
+            was_visited = True
 
     if not was_visited:
         return 0.30
@@ -179,7 +184,6 @@ def compute_trigger_confidence(
     if is_bare_homepage:
         return 0.30
 
-    target_text = extracted_text.lower()
     page_words = set(re.findall(r"\b[a-z0-9$]+\b", target_text))
     matches = [w for w in summary_words if w in page_words]
     overlap_ratio = len(matches) / len(summary_words) if summary_words else 0.0
@@ -197,9 +201,14 @@ def compute_trigger_confidence(
     return min(round(score, 2), 0.95)
 
 
+# Global semaphore allows concurrent Browser-Use agents up to batch capacity
+_trigger_semaphore = asyncio.Semaphore(5)
+
+
 async def _run_browser_use_agent(
     clean_domain: str,
     settings: Settings,
+    provider: str = "both",
     verbose: bool = False,
 ) -> tuple[TriggerEvent | None, str]:
     """Execute the Browser-Use agent with step and external domain constraints."""
@@ -212,24 +221,51 @@ async def _run_browser_use_agent(
 
     from browser_use import Agent, BrowserProfile, BrowserSession
 
-    # 1. Initialize LLM: use OpenRouter if configured, otherwise Groq
-    if settings.openrouter_api_key and settings.openrouter_api_key.strip():
+    # 1. Initialize LLM based on provider selection
+    llm = None
+    fallback_llm = None
+
+    has_openrouter = bool(settings.openrouter_api_key and settings.openrouter_api_key.strip())
+    has_groq = bool(settings.groq_api_key and settings.groq_api_key.strip())
+
+    if provider in ("both", "openrouter") and has_openrouter:
         from browser_use.llm import ChatOpenRouter
 
         llm = ChatOpenRouter(
             model=settings.openrouter_model,
             api_key=settings.openrouter_api_key,
+            extra_body={"max_tokens": 1500},
         )
-    elif settings.groq_api_key and settings.groq_api_key.strip():
-        from browser_use.llm import ChatGroq
+        if provider == "both" and has_groq:
+            from browser_use.llm.openai.chat import ChatOpenAI
 
-        llm = ChatGroq(
+            fallback_llm = ChatOpenAI(
+                model=settings.groq_trigger_model,
+                api_key=settings.groq_api_key,
+                base_url="https://api.groq.com/openai/v1",
+                max_completion_tokens=1500,
+            )
+
+    if llm is None and provider in ("both", "groq") and has_groq:
+        from browser_use.llm.openai.chat import ChatOpenAI
+
+        llm = ChatOpenAI(
             model=settings.groq_trigger_model,
             api_key=settings.groq_api_key,
+            base_url="https://api.groq.com/openai/v1",
+            max_completion_tokens=1500,
         )
-    else:
-        log.info("trigger_agent_skipped_no_key", domain=clean_domain)
+
+    if llm is None:
+        log.info("trigger_agent_skipped_no_key", domain=clean_domain, provider=provider)
         return None, "skipped"
+
+    # Determine whether the active LLM supports json_schema structured outputs.
+    # groq/compound has 70K TPM (great!) but doesn't support response_format json_schema.
+    # When it's the primary or only LLM, we skip output_model_schema and rely on prompt
+    # instructions + the manual JSON parsing fallback below.
+    active_model = settings.groq_trigger_model if (llm and not has_openrouter) or provider == "groq" else settings.openrouter_model
+    use_structured_output = "compound" not in active_model
 
     # 2. Configure headless browser session
     profile = BrowserProfile(
@@ -240,18 +276,31 @@ async def _run_browser_use_agent(
     session = BrowserSession(browser_profile=profile)
 
     task_prompt = (
-        f"Find the single most recent company news item (funding round, leadership change, "
-        f"or major product announcement) from {clean_domain} published in the last 12 months. "
-        "Check the homepage navigation or footer for Changelog, Blog, News, or Press links. "
-        "Navigate to the exact announcement page, identify the headline, date, and exact URL, "
-        "and call done. "
-        "RULES:\n"
-        "- The source_url must be the specific blog post or press article URL.\n"
-        "- If no Changelog, Blog, or News section exists or no qualifying announcement is found, "
-        "call done immediately with found=False. Do NOT search external engines or guess."
+        f"Find the single most recent trigger event for {clean_domain} — prioritize FUNDING "
+        f"ROUNDS (Series A/B/C/D, seed, raised $X), then leadership changes, then major product news. "
+        f"Published in the last 12 months.\n\n"
+        f"STRATEGY (try each step in order, stop as soon as you find a qualifying event):\n"
+        f"1. On the homepage, look for nav links labeled Blog, News, Press, Newsroom, Company, or About. "
+        f"Click the most promising one.\n"
+        f"2. If no nav link found, try navigating directly to: https://{clean_domain}/blog then "
+        f"https://{clean_domain}/news then https://{clean_domain}/press — stop at the first that loads.\n"
+        f"3. If none of those pages exist or have no funding/trigger content, do ONE Google search: "
+        f"'{clean_domain} funding OR raised OR \"Series\" site:techcrunch.com OR site:bloomberg.com' "
+        f"and click the top result.\n"
+        f"4. On the article page, extract the headline, date, and URL, then call done.\n\n"
+        f"RULES:\n"
+        f"- The source_url MUST be the specific blog post or press article URL, NOT the homepage.\n"
+        f"- Look for dollar amounts, round names (Seed, Series A/B/C), investor names as strong signals.\n"
+        f"- If after all steps above you find nothing qualifying, call done with found=False.\n\n"
+        f"OUTPUT FORMAT — when calling done, return ONLY this JSON:\n"
+        f'{{"found": true/false, "event_type": "funding"|"leadership_change"|"product_news"|"other"|null, '
+        f'"summary": "1-2 sentence summary"|null, "source_url": "https://..."|null, '
+        f'"estimated_date": "Month YYYY"|null}}'
     )
 
-    # External domain hop enforcement state
+    # External domain hop enforcement — allow Google + 1 news site + the target domain
+    # (3 external domains total: google.com, one news source, and any CDN/redirect)
+    ALLOWED_EXTERNAL_LIMIT = 3
     external_domains_seen: set[str] = set()
     should_stop = False
 
@@ -263,7 +312,7 @@ async def _run_browser_use_agent(
         for u in agent.history.urls():
             if _is_external_domain(u, clean_domain):
                 external_domains_seen.add(_extract_host(u))
-                if len(external_domains_seen) > 1:
+                if len(external_domains_seen) > ALLOWED_EXTERNAL_LIMIT:
                     log.info(
                         "trigger_agent_external_hop_limit_hit",
                         domain=clean_domain,
@@ -278,16 +327,22 @@ async def _run_browser_use_agent(
                         pass
                     break
 
-    agent = Agent(
+    agent_kwargs = dict(
         task=task_prompt,
         llm=llm,
+        fallback_llm=fallback_llm,
         browser_session=session,
         use_vision=False,
-        output_model_schema=TriggerEventOutput,
+        flash_mode=True,
         initial_actions=[{"navigate": {"url": f"https://{clean_domain}", "new_tab": False}}],
         max_actions_per_step=1,
         register_should_stop_callback=_should_stop_callback,
     )
+    # Only enforce json_schema when the LLM supports it; otherwise rely on prompt + fallback parsing
+    if use_structured_output:
+        agent_kwargs["output_model_schema"] = TriggerEventOutput
+
+    agent = Agent(**agent_kwargs)
 
     try:
         # Enforce max actions hard limit in code
@@ -295,10 +350,11 @@ async def _run_browser_use_agent(
 
         # Retrieve structured output from Browser-Use
         output_data: TriggerEventOutput | None = None
-        try:
-            output_data = history.get_structured_output(TriggerEventOutput)
-        except Exception:
-            pass
+        if use_structured_output:
+            try:
+                output_data = history.get_structured_output(TriggerEventOutput)
+            except Exception:
+                pass
 
         if not output_data:
             # Fallback: attempt json parsing of final result
@@ -343,10 +399,14 @@ async def _run_browser_use_agent(
 async def discover_trigger_event(
     domain: str,
     settings: Settings,
+    provider: str = "both",
     verbose: bool = False,
 ) -> tuple[TriggerEvent | None, str, float]:
     """
     Discover recent trigger events for a domain using Browser-Use.
+
+    Args:
+        provider: Which LLM backend to use — "both", "openrouter", or "groq".
 
     Returns:
         (trigger_event, status, duration_seconds)
@@ -365,10 +425,11 @@ async def discover_trigger_event(
         return None, "skipped", 0.0
 
     try:
-        event, status = await asyncio.wait_for(
-            _run_browser_use_agent(clean_domain, settings, verbose=verbose),
-            timeout=settings.trigger_stage_timeout_s,
-        )
+        async with _trigger_semaphore:
+            event, status = await asyncio.wait_for(
+                _run_browser_use_agent(clean_domain, settings, provider=provider, verbose=verbose),
+                timeout=settings.trigger_stage_timeout_s,
+            )
         duration = round(time.monotonic() - start_time, 2)
         log.info(
             "trigger_stage_complete",

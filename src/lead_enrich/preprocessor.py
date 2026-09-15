@@ -50,6 +50,9 @@ def clean_text(raw: str) -> str:
     for pattern in noise_patterns:
         text = re.sub(pattern, "", text)
 
+    # Remove runs of repeated brackets or ascii/unicode animation noise
+    text = re.sub(r"[\[\{\(\<‹›\)\}\]]{4,}", " ", text)
+
     # Deduplicate lines and drop isolated button/menu labels
     lines = text.split("\n")
     seen_count: dict[str, int] = {}
@@ -86,12 +89,15 @@ def _page_priority(page: PageContent) -> int:
     """Higher priority pages get more of the token budget."""
     parsed = urlparse(page.url)
     path = parsed.path.rstrip("/")
+    url_lower = page.url.lower()
+    # Team, about, leadership pages are primary source for leadership intel
+    if any(kw in url_lower for kw in ["about", "team", "leadership", "people", "founders"]):
+        return 5
     if not path or path == "":
         return 4  # Homepage is primary source for overview and target audience
-    url_lower = page.url.lower()
-    if any(kw in url_lower for kw in ["about", "team", "company", "leadership"]):
-        return 3  # Company & leadership details
-    if any(kw in url_lower for kw in ["contact", "people"]):
+    if any(kw in url_lower for kw in ["company", "story", "who-we-are", "whoweare"]):
+        return 3
+    if any(kw in url_lower for kw in ["contact"]):
         return 2
     if any(kw in url_lower for kw in ["pricing", "careers"]):
         return 1
@@ -102,14 +108,14 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
     """
     Merge and trim page content to fit strictly within the token budget.
 
-    Strategy: prioritizes homepage and about/team pages. If an about/team page
-    exists, caps homepage consumption so the leadership page is never starved.
+    Strategy: prioritizes about/team pages and homepage. Balances token
+    consumption so both leadership bios and company overview fit cleanly.
     """
     sorted_pages = sorted(pages, key=_page_priority, reverse=True)
 
     # Check if a dedicated about/team page is present in the set
-    has_about_page = any(_page_priority(p) == 3 for p in sorted_pages if not p.error)
-    max_homepage_tokens = int(token_budget * 0.52) if has_about_page else token_budget
+    has_about_page = any(_page_priority(p) >= 5 for p in sorted_pages if not p.error)
+    max_page_cap = int(token_budget * 0.55) if has_about_page else token_budget
 
     sections: list[str] = []
     tokens_used = 0
@@ -133,13 +139,10 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
         encoded_section = _encoder.encode(section)
 
         remaining_total = token_budget - tokens_used
-        if remaining_total <= 0:
+        if remaining_total <= 50:
             break
 
-        is_homepage = _page_priority(page) == 4
-        allowed_for_page = min(
-            remaining_total, max_homepage_tokens if is_homepage else remaining_total
-        )
+        allowed_for_page = min(remaining_total, max_page_cap)
 
         if len(encoded_section) <= allowed_for_page:
             sections.append(section)
@@ -148,7 +151,5 @@ def prepare_llm_input(pages: list[PageContent], token_budget: int) -> str:
             truncated = _encoder.decode(encoded_section[:allowed_for_page]) + "\n[...]"
             sections.append(truncated)
             tokens_used += allowed_for_page
-            if not is_homepage:
-                break
 
     return "\n\n".join(sections)

@@ -150,12 +150,13 @@ def _score_url(path: str) -> int:
     path_lower = path.lower().strip("/")
     segments = [s for s in path_lower.split("/") if s]
 
-    # Skip blog posts, changelog updates, docs, careers, legal, and persona solutions
+    # Skip blog posts, changelog updates, news, press, events, docs, legal, and persona solutions
     skip_segments = {
         "blog",
         "changelog",
         "news",
         "press",
+        "media",
         "events",
         "docs",
         "api",
@@ -170,8 +171,9 @@ def _score_url(path: str) -> int:
         "case-studies",
         "integrations",
         "templates",
+        "podcast",
     }
-    if any(seg in skip_segments for seg in segments):
+    if any(any(skip in seg for skip in skip_segments) for seg in segments):
         return 0
 
     # Specifically reject persona pages like /for/data-teams or plural marketing landing /teams
@@ -183,22 +185,25 @@ def _score_url(path: str) -> int:
     score = 0
     for seg in segments:
         clean_seg = seg.replace("-", "").replace("_", "")
-        if clean_seg in ("about", "aboutus", "ourstory", "story"):
-            score = max(score, 12)
-        elif clean_seg in (
-            "team",
-            "leadership",
-            "people",
-            "executives",
-            "founders",
-            "meettheteam",
+        if any(kw in clean_seg for kw in ("about", "ourstory", "story")):
+            score = max(score, 15)
+        elif any(
+            kw in clean_seg
+            for kw in (
+                "team",
+                "leadership",
+                "people",
+                "executives",
+                "founders",
+                "meettheteam",
+            )
         ):
-            score = max(score, 12)
-        elif clean_seg in ("company", "whoweare"):
+            score = max(score, 15)
+        elif any(kw in clean_seg for kw in ("company", "whoweare")):
             score = max(score, 10)
-        elif clean_seg in ("contact", "contactus"):
+        elif any(kw in clean_seg for kw in ("contact", "contactus")):
             score = max(score, 7)
-        elif clean_seg in ("pricing",):
+        elif any(kw in clean_seg for kw in ("pricing",)):
             score = max(score, 4)
 
     return score
@@ -474,9 +479,9 @@ async def discover_urls(domain: str, settings: Settings, browser=None) -> list[s
             if pw_instance:
                 await pw_instance.stop()
 
-    # Sort by relevance score, take top 2 high-signal subpages (plus homepage = 3 total)
+    # Sort by relevance score, take top 3 high-signal subpages (plus homepage = 4 total)
     ranked = sorted(discovered.items(), key=lambda x: x[1], reverse=True)
-    urls = [url for url, _ in ranked[:2]]
+    urls = [url for url, _ in ranked[:3]]
 
     # Fallback: if we didn't find subpages, try common paths
     if len(urls) < 1:
