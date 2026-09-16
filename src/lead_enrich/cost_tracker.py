@@ -90,15 +90,18 @@ def print_cost_report(results: list[DomainResult]) -> None:
     # Trigger phase summary
     if has_trigger:
         http_hits = sum(
-            1 for r in results
+            1
+            for r in results
             if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "http"
         )
         agent_hits = sum(
-            1 for r in results
+            1
+            for r in results
             if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "agent"
         )
         cache_hits = sum(
-            1 for r in results
+            1
+            for r in results
             if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "cached"
         )
         if http_hits or agent_hits or cache_hits:

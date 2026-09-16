@@ -151,14 +151,18 @@ class ProviderRouter:
     Provides auto-failover when the primary provider is exhausted.
     """
 
-    groq: ProviderState = field(default_factory=lambda: ProviderState(
-        name="groq",
-        bucket=TokenBucket(tpm_limit=30_000),
-    ))
-    openrouter: ProviderState = field(default_factory=lambda: ProviderState(
-        name="openrouter",
-        bucket=TokenBucket(tpm_limit=200_000),
-    ))
+    groq: ProviderState = field(
+        default_factory=lambda: ProviderState(
+            name="groq",
+            bucket=TokenBucket(tpm_limit=30_000),
+        )
+    )
+    openrouter: ProviderState = field(
+        default_factory=lambda: ProviderState(
+            name="openrouter",
+            bucket=TokenBucket(tpm_limit=200_000),
+        )
+    )
 
     # Track which providers have API keys configured
     groq_available: bool = False

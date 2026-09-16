@@ -129,33 +129,32 @@ class TestExtractArticleLinks:
     """Test article link extraction from HTML."""
 
     def test_extracts_blog_links(self):
-        html = '''
+        html = """
         <div>
             <a href="/blog/series-b-announcement">We Raised $50M in Series B</a>
             <a href="/blog/product-update">New Feature Release</a>
             <a href="/about">About Us</a>
         </div>
-        '''
+        """
         links = _extract_article_links(html, "https://example.com")
         assert len(links) >= 1
         # Funding link should be prioritized
         assert any("series-b" in link["url"] for link in links)
 
     def test_funding_links_sorted_first(self):
-        html = '''
+        html = """
         <div>
             <a href="/blog/product-update">New dark mode is here</a>
             <a href="/blog/series-b">We raised $50M in Series B from Sequoia</a>
             <a href="/blog/team-retreat">Team offsite recap</a>
         </div>
-        '''
+        """
         links = _extract_article_links(html, "https://example.com")
         assert links[0]["url"].endswith("series-b")
 
     def test_skips_short_text_links(self):
         html = (
-            '<a href="/blog/post">OK</a>'
-            '<a href="/blog/article">This is a proper article title</a>'
+            '<a href="/blog/post">OK</a><a href="/blog/article">This is a proper article title</a>'
         )
         links = _extract_article_links(html, "https://example.com")
         assert all(len(link["text"]) >= 10 for link in links)

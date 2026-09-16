@@ -96,20 +96,61 @@ def _normalize_linkedin_url(url: str) -> str:
 
 
 def _is_valid_person_name(name: str) -> bool:
-    """Validate that a candidate string looks like a human person's name, not a sentence or post title."""
+    """Validate that a candidate string looks like a human person's name."""
     name_tokens = name.strip().split()
     if not (2 <= len(name_tokens) <= 4):
         return False
     stop_words = {
-        "how", "why", "what", "deciding", "accidentally", "chose", "my", "our",
-        "the", "with", "from", "for", "and", "or", "in", "at", "to", "is", "we",
-        "i", "did", "post", "activity", "comments", "read", "join", "see", "listen",
-        "ep", "episode", "series", "thanks", "congrats", "welcoming", "introducing",
-        "announcing", "excited", "happy", "proud", "reflection", "thoughts", "interview"
+        "how",
+        "why",
+        "what",
+        "deciding",
+        "accidentally",
+        "chose",
+        "my",
+        "our",
+        "the",
+        "with",
+        "from",
+        "for",
+        "and",
+        "or",
+        "in",
+        "at",
+        "to",
+        "is",
+        "we",
+        "i",
+        "did",
+        "post",
+        "activity",
+        "comments",
+        "read",
+        "join",
+        "see",
+        "listen",
+        "ep",
+        "episode",
+        "series",
+        "thanks",
+        "congrats",
+        "welcoming",
+        "introducing",
+        "announcing",
+        "excited",
+        "happy",
+        "proud",
+        "reflection",
+        "thoughts",
+        "interview",
     }
     if any(tok.lower() in stop_words for tok in name_tokens):
         return False
-    if any(not tok[0].isalpha() or (not tok[0].isupper() and tok.lower() not in ("de", "van", "von", "al")) for tok in name_tokens):
+    if any(
+        not tok[0].isalpha()
+        or (not tok[0].isupper() and tok.lower() not in ("de", "van", "von", "al"))
+        for tok in name_tokens
+    ):
         return False
     if any(p in name for p in (".", "?", "!", '"', ";", ":", "/", "\\", "…", "...")):
         return False
@@ -158,7 +199,7 @@ def _parse_linkedin_title(
     else:
         role = ""
 
-    # If role is missing from headline, infer from matching executive pattern in title or name-bound content
+    # Infer role from matching executive pattern in title or name-bound content
     if not role:
         match = EXEC_ROLE_PATTERN.search(title_lower)
         if match:
@@ -199,7 +240,7 @@ def _parse_linkedin_title(
     if role_lower.endswith(("inc.", "inc", "llc", "corp", "ltd", "gmbh")):
         return None
 
-    # Verify company alignment: if the title explicitly mentions 'at ...', ensure it matches target domain
+    # Verify company alignment: if title explicitly mentions 'at ...', ensure domain matches
     comp_match = re.search(r"(?:at|@)\s+([A-Za-z0-9\s&,.'\"-]+)", role, re.IGNORECASE)
     if comp_match:
         comp = comp_match.group(1).strip()
@@ -223,7 +264,6 @@ def _parse_linkedin_title(
 async def _lookup_founders_external(domain: str, settings: Settings, client) -> list[TeamMember]:
     """Search for company founders / executives on LinkedIn if absent from the website."""
     clean_name = domain.split(".")[0].capitalize()
-    brand = domain.split(".")[0].lower()
 
     try:
         # 1. Primary query targeting LinkedIn profile pages and executive roles
@@ -246,13 +286,17 @@ async def _lookup_founders_external(domain: str, settings: Settings, client) -> 
             title = r.get("title", "")
             content = r.get("content", "")
             parsed = _parse_linkedin_title(title, url, domain, content=content)
-            if parsed and _is_valid_person_name(parsed.name) and parsed.name.lower() not in seen_names:
+            if (
+                parsed
+                and _is_valid_person_name(parsed.name)
+                and parsed.name.lower() not in seen_names
+            ):
                 seen_names.add(parsed.name.lower())
                 heuristic_leaders.append(parsed)
                 if len(heuristic_leaders) >= 3:
                     return heuristic_leaders
 
-        # 2. If heuristic parsing didn't find at least 2 leaders, use LLM extraction on search snippets
+        # 2. If heuristic parsing didn't find at least 2 leaders, use LLM extraction on snippets
         if len(heuristic_leaders) < 2 and all_results and settings.groq_api_key:
             import instructor
             from groq import AsyncGroq
@@ -273,10 +317,11 @@ async def _lookup_founders_external(domain: str, settings: Settings, client) -> 
                         {
                             "role": "system",
                             "content": (
-                                f"Extract the top 2-3 genuine founders / executive leaders (CEO, Co-founder, CTO) "
-                                f"of {clean_name} ({domain}) and their LinkedIn profile URLs from these search results. "
-                                "For URLs, ensure they are in https://www.linkedin.com/in/username format. "
-                                "Do not extract customer quotes, investors, or lower-level employees. "
+                                f"Extract the top 2-3 genuine founders / executive leaders "
+                                f"(CEO, Co-founder, CTO) of {clean_name} ({domain}) and "
+                                "their LinkedIn profile URLs from these search results. "
+                                "Ensure URLs are in https://www.linkedin.com/in/username format. "
+                                "Do not extract customer quotes or investors. "
                                 "Return valid JSON adhering to the schema."
                             ),
                         },
@@ -285,14 +330,14 @@ async def _lookup_founders_external(domain: str, settings: Settings, client) -> 
                     response_model=_DiscoveredLeaders,
                     max_tokens=800,
                 )
-                for l in out.leaders:
+                for leader in out.leaders:
                     if (
-                        _is_valid_person_name(l.name)
-                        and l.name.lower() not in seen_names
-                        and (not l.linkedin_url or "linkedin.com/in/" in l.linkedin_url)
+                        _is_valid_person_name(leader.name)
+                        and leader.name.lower() not in seen_names
+                        and (not leader.linkedin_url or "linkedin.com/in/" in leader.linkedin_url)
                     ):
-                        seen_names.add(l.name.lower())
-                        heuristic_leaders.append(l)
+                        seen_names.add(leader.name.lower())
+                        heuristic_leaders.append(leader)
                         if len(heuristic_leaders) >= 3:
                             break
             except Exception as exc:
@@ -344,7 +389,19 @@ async def enrich_linkedin_urls(
     intel.key_team_members = clean_members
 
     # 2. Enrich missing LinkedIn URLs for executive leaders extracted from site
-    exec_roles = ["founder", "ceo", "cto", "cfo", "coo", "chief", "president", "vp", "head", "director", "lead"]
+    exec_roles = [
+        "founder",
+        "ceo",
+        "cto",
+        "cfo",
+        "coo",
+        "chief",
+        "president",
+        "vp",
+        "head",
+        "director",
+        "lead",
+    ]
     members_needing_urls = [
         m
         for m in intel.key_team_members
@@ -380,10 +437,7 @@ async def enrich_linkedin_urls(
         await asyncio.gather(*[_search_member(m) for m in target_members])
 
     # 3. External founder lookup if no executive leadership is present
-    has_exec = any(
-        EXEC_ROLE_PATTERN.search(m.role or "")
-        for m in intel.key_team_members
-    )
+    has_exec = any(EXEC_ROLE_PATTERN.search(m.role or "") for m in intel.key_team_members)
     if not intel.key_team_members or not has_exec:
         external_leaders = await _lookup_founders_external(domain, settings, client)
         if external_leaders:

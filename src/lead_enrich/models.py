@@ -72,9 +72,6 @@ class TriggerEvent(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-
-
-
 class CompanyIntel(BaseModel):
     """Structured intelligence extracted from a company's web presence.
 

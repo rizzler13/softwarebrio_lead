@@ -114,12 +114,16 @@ def _strip_html(html: str) -> str:
     # Remove script and style blocks entirely
     text = re.sub(
         r"<(script|style|noscript)[^>]*>.*?</\1>",
-        " ", html, flags=re.DOTALL | re.IGNORECASE,
+        " ",
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
     )
     # Convert common block elements to newlines
     text = re.sub(
         r"<(?:br|p|div|h[1-6]|li|tr|article|section)[^>]*>",
-        "\n", text, flags=re.IGNORECASE,
+        "\n",
+        text,
+        flags=re.IGNORECASE,
     )
     # Strip remaining tags
     text = re.sub(r"<[^>]+>", " ", text)
@@ -226,7 +230,8 @@ def _score_trigger_text(text: str) -> tuple[float, str, str | None]:
     # Leadership change signals
     if confidence < 0.50 and _LEADERSHIP_PATTERN.search(text):
         leader_terms = sum(
-            1 for t in ("ceo", "cto", "cfo", "coo", "chief", "president", "founder")
+            1
+            for t in ("ceo", "cto", "cfo", "coo", "chief", "president", "founder")
             if t in text_lower
         )
         if leader_terms >= 1:
@@ -335,7 +340,6 @@ async def discover_trigger_http(
     try:
         connector = aiohttp.TCPConnector(limit=5, ttl_dns_cache=300)
         async with aiohttp.ClientSession(connector=connector) as session:
-
             # 1. Probe known blog/news/press paths in parallel
             probe_urls = [f"{base_url}{path}" for path in _NEWS_PATHS]
             fetch_tasks = [_fetch_page(session, url, timeout_s=6.0) for url in probe_urls]
@@ -372,8 +376,7 @@ async def discover_trigger_http(
                 # Fetch top 3 article candidates in parallel
                 top_articles = article_links[:3]
                 article_tasks = [
-                    _fetch_page(session, link["url"], timeout_s=6.0)
-                    for link in top_articles
+                    _fetch_page(session, link["url"], timeout_s=6.0) for link in top_articles
                 ]
                 article_results = await asyncio.gather(*article_tasks, return_exceptions=True)
 

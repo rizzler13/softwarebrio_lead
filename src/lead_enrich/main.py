@@ -223,11 +223,9 @@ async def process_domain(
                 # Phase 1: HTTP-based discovery (zero LLM tokens)
                 if settings.http_trigger_enabled:
                     try:
-                        phase1_event, phase1_status, phase1_duration = (
-                            await asyncio.wait_for(
-                                discover_trigger_http(clean_domain, settings),
-                                timeout=settings.http_trigger_timeout_s,
-                            )
+                        phase1_event, phase1_status, phase1_duration = await asyncio.wait_for(
+                            discover_trigger_http(clean_domain, settings),
+                            timeout=settings.http_trigger_timeout_s,
                         )
                     except TimeoutError:
                         phase1_duration = settings.http_trigger_timeout_s

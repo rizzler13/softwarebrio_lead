@@ -162,15 +162,18 @@ def write_run_output(
         1 for r in results if r.intel and r.intel.trigger_event and r.intel.trigger_event.found
     )
     trigger_http_hits = sum(
-        1 for r in results
+        1
+        for r in results
         if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "http"
     )
     trigger_agent_hits = sum(
-        1 for r in results
+        1
+        for r in results
         if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "agent"
     )
     trigger_cache_hits = sum(
-        1 for r in results
+        1
+        for r in results
         if r.intel and r.intel.trigger_event and r.intel.trigger_event.trigger_phase == "cached"
     )
     trigger_stage_timeouts = sum(1 for r in results if r.trigger_event_status == "timeout")

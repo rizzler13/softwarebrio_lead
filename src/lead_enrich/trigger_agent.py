@@ -21,6 +21,8 @@ from typing import Literal
 from urllib.parse import urlparse
 
 import structlog
+from browser_use.llm.base import ChatInvokeCompletion
+from browser_use.llm.openai.chat import ChatOpenAI
 from pydantic import BaseModel
 
 from lead_enrich.config import Settings
@@ -208,6 +210,77 @@ def compute_trigger_confidence(
     return min(round(score, 2), 0.95)
 
 
+class ChatGroqOpenAI(ChatOpenAI):
+    """OpenAI-compatible wrapper for Groq that bypasses response_format=json_schema.
+
+    Groq's compound models (e.g. groq/compound) have high TPM (70k+) but do not
+    support OpenAI's response_format={'type': 'json_schema'}. This wrapper uses
+    dont_force_structured_output=True and add_schema_to_system_prompt=True,
+    then parses and normalizes the generated JSON so Browser-Use Agent works seamlessly.
+    """
+
+    async def ainvoke(self, messages, output_format=None, **kwargs):
+        if output_format is not None and self.dont_force_structured_output:
+            json_reminder = (
+                "\n\nCRITICAL: You must return ONLY a raw JSON object adhering to the schema. "
+                "Do NOT output conversational prose, thoughts, or markdown commentary outside JSON."
+            )
+            augmented_messages = list(messages)
+            if augmented_messages and hasattr(augmented_messages[-1], "content"):
+                from copy import copy
+
+                last_msg = copy(augmented_messages[-1])
+                last_msg.content = (last_msg.content or "") + json_reminder
+                augmented_messages[-1] = last_msg
+            else:
+                augmented_messages = messages
+
+            comp = await super().ainvoke(augmented_messages, output_format=None, **kwargs)
+            text = (comp.completion or "").strip()
+            code_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if code_match:
+                text = code_match.group(1)
+            else:
+                match = re.search(r"\{.*\}", text, re.DOTALL)
+                if match:
+                    text = match.group(0)
+            try:
+                import json
+
+                data = json.loads(text)
+                if isinstance(data, dict):
+                    if "action" in data:
+                        for act in data.get("action", []):
+                            if "done" in act and isinstance(act["done"], dict):
+                                if "text" not in act["done"]:
+                                    act["done"]["text"] = str(
+                                        act["done"].get("output") or act["done"].get("data") or ""
+                                    )
+                    elif any(k in data for k in ("found", "summary", "event_type", "source_url")):
+                        data = {
+                            "thinking": "Extraction complete.",
+                            "action": [{"done": {"text": json.dumps(data)}}],
+                        }
+                parsed = output_format.model_validate(data)
+            except Exception:
+                try:
+                    parsed = output_format.model_validate_json(text)
+                except Exception:
+                    parsed = output_format.model_validate(
+                        {
+                            "thinking": text[:200] if text else "Analyzing page...",
+                            "action": [{"wait": {"seconds": 2}}],
+                        }
+                    )
+
+            return ChatInvokeCompletion(
+                completion=parsed,
+                usage=comp.usage,
+                stop_reason=comp.stop_reason,
+            )
+        return await super().ainvoke(messages, output_format=output_format, **kwargs)
+
+
 # Global semaphore allows concurrent Browser-Use agents up to batch capacity
 _trigger_semaphore = asyncio.Semaphore(5)
 
@@ -250,22 +323,22 @@ async def _run_browser_use_agent(
             extra_body={"max_tokens": 1500},
         )
         if provider == "both" and has_groq:
-            from browser_use.llm.openai.chat import ChatOpenAI
-
-            fallback_llm = ChatOpenAI(
+            fallback_llm = ChatGroqOpenAI(
                 model=settings.groq_trigger_model,
                 api_key=settings.groq_api_key,
                 base_url="https://api.groq.com/openai/v1",
+                dont_force_structured_output=True,
+                add_schema_to_system_prompt=True,
                 max_completion_tokens=1500,
             )
 
     if llm is None and provider in ("both", "groq") and has_groq:
-        from browser_use.llm.openai.chat import ChatOpenAI
-
-        llm = ChatOpenAI(
+        llm = ChatGroqOpenAI(
             model=settings.groq_trigger_model,
             api_key=settings.groq_api_key,
             base_url="https://api.groq.com/openai/v1",
+            dont_force_structured_output=True,
+            add_schema_to_system_prompt=True,
             max_completion_tokens=1500,
         )
 
@@ -277,7 +350,11 @@ async def _run_browser_use_agent(
     # groq/compound has 70K TPM (great!) but doesn't support response_format json_schema.
     # When it's the primary or only LLM, we skip output_model_schema and rely on prompt
     # instructions + the manual JSON parsing fallback below.
-    active_model = settings.groq_trigger_model if (llm and not has_openrouter) or provider == "groq" else settings.openrouter_model
+    active_model = (
+        settings.groq_trigger_model
+        if (llm and not has_openrouter) or provider == "groq"
+        else settings.openrouter_model
+    )
     use_structured_output = "compound" not in active_model
 
     # 2. Configure headless browser session
@@ -299,32 +376,31 @@ async def _run_browser_use_agent(
 
     task_prompt = (
         f"Find the single most recent trigger event for {clean_domain} — prioritize FUNDING "
-        f"ROUNDS (Series A/B/C/D, seed, raised $X), then leadership changes, then major product news. "
+        f"ROUNDS (Series A/B/C/D, seed, raised $X), then leadership changes, then product news. "
         f"Published in the last 12 months.\n\n"
         f"{skip_note}"
         f"STRATEGY (try each step in order, stop as soon as you find a qualifying event):\n"
-        f"1. On the homepage, look for nav links labeled Blog, News, Press, Newsroom, Company, or About. "
+        f"1. On homepage, look for nav links: Blog, News, Press, Newsroom, Company, or About. "
         f"Click the most promising one.\n"
-        f"2. If no nav link found, try navigating directly to: https://{clean_domain}/blog then "
-        f"https://{clean_domain}/news then https://{clean_domain}/press — stop at the first that loads.\n"
-        f"3. If none of those pages exist or have no funding/trigger content, do ONE Google search: "
-        f"'{clean_domain} funding OR raised OR \"Series\" site:techcrunch.com OR site:bloomberg.com' "
-        f"and click the top result.\n"
-        f"4. On the article page, extract the headline, date, and URL, then call done.\n\n"
+        f"2. If no nav link, try navigating to: https://{clean_domain}/blog then "
+        f"https://{clean_domain}/news — stop at first that loads.\n"
+        f"3. If none exist, do ONE Google search: "
+        f"'{clean_domain} funding OR raised OR \"Series\" site:techcrunch.com' "
+        f"and click top result.\n"
+        f"4. On article page, extract headline, date, and URL, then call done.\n\n"
         f"RULES:\n"
-        f"- The source_url MUST be the specific blog post or press article URL, NOT the homepage.\n"
-        f"- Look for dollar amounts, round names (Seed, Series A/B/C), investor names as strong signals.\n"
+        f"- source_url MUST be the specific blog post or press article URL, NOT the homepage.\n"
+        f"- Look for dollar amounts, round names (Seed, Series A/B/C), investor names.\n"
         f"- Be efficient — do NOT click around aimlessly. Each step costs tokens.\n"
         f"- If after all steps above you find nothing qualifying, call done with found=False.\n\n"
         f"OUTPUT FORMAT — when calling done, return ONLY this JSON:\n"
-        f'{{"found": true/false, "event_type": "funding"|"leadership_change"|"product_news"|"other"|null, '
+        f'{{"found": true/false, "event_type": "funding"|"leadership_change"|"product_news"|null, '
         f'"summary": "1-2 sentence summary"|null, "source_url": "https://..."|null, '
         f'"estimated_date": "Month YYYY"|null}}'
     )
 
-    # External domain hop enforcement — allow Google + 1 news site + the target domain
-    # (3 external domains total: google.com, one news source, and any CDN/redirect)
-    ALLOWED_EXTERNAL_LIMIT = 3
+    # External domain hop enforcement — allow Google + 1 news site + target domain
+    allowed_external_limit = 3
     external_domains_seen: set[str] = set()
     should_stop = False
 
@@ -336,7 +412,7 @@ async def _run_browser_use_agent(
         for u in agent.history.urls():
             if _is_external_domain(u, clean_domain):
                 external_domains_seen.add(_extract_host(u))
-                if len(external_domains_seen) > ALLOWED_EXTERNAL_LIMIT:
+                if len(external_domains_seen) > allowed_external_limit:
                     log.info(
                         "trigger_agent_external_hop_limit_hit",
                         domain=clean_domain,

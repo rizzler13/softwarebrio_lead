@@ -193,7 +193,6 @@ class TestTriggerAgentDegradation:
             assert status == "completed"
 
 
-
 class TestTriggerCache:
     """Test file-backed trigger event cache."""
 
@@ -223,6 +222,7 @@ class TestTriggerCache:
         cache.put("example.com", event)
         # TTL is 0, should expire immediately
         import time
+
         time.sleep(0.01)
         assert cache.get("example.com") is None
 

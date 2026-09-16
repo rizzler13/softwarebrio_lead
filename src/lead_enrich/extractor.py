@@ -47,11 +47,10 @@ def _is_retryable_error(exc: BaseException) -> bool:
 SYSTEM_PROMPT = (
     "You are a lead intelligence analyst extracting structured data for a target company.\n"
     "CRITICAL RULES:\n"
-    "- Extract key founders, C-level executives (CEO, CTO, COO, etc.), VPs, and leadership team members\n"
-    "  who work directly for the TARGET company (up to 3-5 leaders). Include their full name and exact role.\n"
-    "- NEVER extract customer testimonials, partner quotes, investors, advisors, or customer logos as team members.\n"
-    "- If no founders or leadership are explicitly named in the text, leave key_team_members as [].\n"
-    "- For each team member, populate 'name' with their full human name and 'role' with their executive title.\n"
+    "- Extract key founders, C-level executives (CEO, CTO, COO, etc.), VPs, and leadership\n"
+    "  who work directly for the TARGET company (up to 3-5 leaders). Include full name and role.\n"
+    "- NEVER extract customer testimonials, quotes, investors, advisors, or customer logos.\n"
+    "- For each team member, populate 'name' with full name and 'role' with title.\n"
     "- Company overview: 1-2 concise sentences of what they do and why notable.\n"
     "- Target audience: primary customer/user segments."
 )
